@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the Entity base class.
+# This file contains the implementation of the Entity model class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -17,18 +17,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class Entity
-# This is a base class for entities in the system, providing common
+# This is a model class for entities in the system, providing common
 # features for all of the entities. Entities are any simple named
 # object in the system, typically things like ingredients, prep
 # memthods, recipe types and states.
 #
 # Tables for entities must have a minimum of the following fields:
 #
-# - `id`: unsigned int or larger, auto incremement
-# - `name`: varchar ot text, utf8_unicode_ci charset recommended
-# - `refcount`: unsigned int recommended
-#
+# name        | type, max size | contents/notes
+# ------------|----------------|--------------------------------------------------------------
+# id          | unsigned int   | The ID of the entity; ensure auto incremement
+# name        | varchar        | Entity name, size depends on entity, utf8_unicode_ci charset recommended
+# refcount    | unsigned int   | How many uses of this are there?
 package ORB::System::Entity;
+
+# Current uses of this module:
+#
+# - ingredients
+# - preparation methods
+# - states
+# - tags
+# - types
+# - units
 
 use strict;
 use parent qw(Webperl::SystemModule);
@@ -223,6 +233,7 @@ sub remove_relation {
 
     return defined($result);
 }
+
 
 # ============================================================================
 #  Reference counting
