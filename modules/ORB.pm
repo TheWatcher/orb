@@ -363,7 +363,7 @@ sub api_html_response {
 sub _xml_api_response {
     my $self    = shift;
     my $data    = shift;
-    my %xmlopts = shift;
+    my %xmlopts = @_;
     my $xmldata;
 
     $xmlopts{"XMLDecl"} = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>'
