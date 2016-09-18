@@ -93,22 +93,25 @@ sub new {
 # the old version to 'edited'. The args hash can contain the following, all
 # fields are required unless indicated otherwise:
 #
-# - `previd`: (optional) ID of the recipe this is an edit of. If specified, the
-#             old recipe has its state set to 'edited', and the metadata context
-#             of the new recipe is created as a child of the old recipe to ensure
-#             editing works as expected.
-# - `name`:   The name of the recipe
-# - `source`: (optional) Where did the recipe come from originally?
-# - `timereq`: A string describing the time required for the recipe
-# - `timemins`: How long does the recipe take in minutes, in total?
-# - `yield`: A string describing how much stuff the recipe creates
-# - `temp`: (optional) Oven preheat temperature
-# - `temptype`: The type of units used for `temp`: 'C', 'F', 'Gas mark', or 'N/A'
-# - `method`: HTML text containing the recipe instructions
-# - `notes`: (optional) Additional information about the recipe
-# - `typeid`: The recipe type ID
-# - `statusid`: The recipe status ID
-# - `creatorid`: The ID of the user who created the recipe
+# -      `previd`: (optional) ID of the recipe this is an edit of. If specified,
+#                  the old recipe has its state set to 'edited', and the
+#                  metadata context of the new recipe is created as a child of
+#                  the old recipe to ensure editing works as expected.
+# -        `name`: The name of the recipe
+# -      `source`: (optional) Where did the recipe come from originally?
+# -     `timereq`: A string describing the time required for the recipe
+# -    `timemins`: How long does the recipe take in minutes, in total?
+# -       `yield`: A string describing how much stuff the recipe creates
+# -        `temp`: (optional) Oven preheat temperature
+# -    `temptype`: The type of units used: 'C', 'F', 'Gas mark', or 'N/A'
+# -      `method`: HTML text containing the recipe instructions
+# -       `notes`: (optional) Additional information about the recipe
+# -        `type`: The recipe type
+# -      `status`: The recipe status
+# -   `creatorid`: The ID of the user who created the recipe
+# - `ingredients`: A reference to an array of ingredient hashes. See the
+#                  documentation for _add_recipe_ingredients() for the
+#                  required hash values
 #
 # @param args A hash, or reference to a hash, of values to use when creating
 #             the new recipe.
@@ -120,14 +123,30 @@ sub create {
 
     $self -> clear_error();
 
+
+
     # We need a metadata context for the recipe
     my $metadataid = $self -> _create_recipe_metadata($args -> {"previd"});
 
+    # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                             (`metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`)
                                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP())");
+    my $result = $newh -> execute($metadataid, $args -> {"previd"}, $args -> {"name"}, $args -> {"source"}, $args -> {"timereq"}, $args -> {"timemins"}, $args -> {"yield"}, $args -> {"temp"}, $args -> {"temptype"}, $args -> {"method"}, $args -> {"notes"}, $args -> {"type_id"}, $args -> {"status_id"}, $args -> {"creatorid"});
+    return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("No rows added when inserting recipe.") if($result eq "0E0");
+
+    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+
+    return $self -> self_error("Unable to obtain id for new recipe")
+        if(!$newid);
+
+    # Attach to the metadata context as it's in use now
+    $self -> {"metadata"} -> attach($metadataid)
+        or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
 
 
+    # Add the ingredients for the recipe
 
 }
 
@@ -136,11 +155,19 @@ sub create {
 #  Private methods
 
 ## @method private $ _add_recipe_ingredients($recipeid, $ingredients)
-# Add the specified ingredients to the recipe list for the specified recipe. This goes through
-# the array of ingredients and adds each entry to the ingredient list for the specified recipe,
+# Add the specified ingredients to the recipe list for the specified recipe.
+# This goes through the array of ingredients and adds each entry to the
+# ingredient list for the specified recipe. The ingredients are specified
+# as an array of hashrefs, each hash should contain the following keys:
+#
+# - `separator`: if true, the ingredient is a separator, and `name` is set
+#                as the separator line title.
+# - `name`: the ingredient name (or separator title if `separator` is true.
+# -
 #
 # @param recipeid    The id of the recipe to add the ingredients to.
-# @param ingredients A reference to an array of ingredient specifications (quantity, units, ingredient)
+# @param ingredients A reference to an array of hashes containing ingredient
+#                    specifications.
 # @return true on success, undef on error
 sub _add_recipe_ingredients {
     my $self        = shift;
@@ -154,8 +181,9 @@ sub _add_recipe_ingredients {
 
     # Now go through each of the ingredients
     foreach my $ingred (@{$ingredients}) {
-        # If the units are 'Separator', we're actually adding a separator title rather than an ingredient
-        if($ingred -> {"units"} eq "Separator") {
+
+        # Handle serparators... separately
+        if($ingred -> {"separator"}) {
             $addh -> execute($recipeid, undef, undef, undef, undef, undef, $ingred -> {"name"})
                 or return $self -> self_error("Error adding separator '".$ingred -> {"name"}."': ".$self -> {"dbh"} -> errstr());
 
