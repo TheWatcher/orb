@@ -77,7 +77,7 @@ sub new {
 #  Entity creation and deletion
 
 ## @method $ create($name)
-# Attempt to create a new named entity in the entoty table. Generally you
+# Attempt to create a new named entity in the entity table. Generally you
 # should not call this directly, as it will create a new entity in the table
 # even if an entity already exists with the same name: you will generally
 # want to call get_id() instead, as that will determine whether that the
