@@ -17,31 +17,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class Recipe
-# +------------+--------------------------------+------+-----+---------+----------------+
-# | Field      | Type                           | Null | Key | Default | Extra          |
-# +------------+--------------------------------+------+-----+---------+----------------+
-# | id         | int(10) unsigned               | NO   | PRI | NULL    | auto_increment |
-# | name       | varchar(80)                    | NO   | UNI | NULL    |                |
-# | source     | varchar(255)                   | NO   |     | NULL    |                |
-# | timereq    | varchar(255)                   | NO   |     | NULL    |                |
-# | timemins   | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | yield      | varchar(80)                    | NO   |     | NULL    |                |
-# | temp       | smallint(5) unsigned           | YES  |     | NULL    |                |
-# | temptype   | enum('C','F','Gas mark','N/A') | NO   |     | NULL    |                |
-# | method     | text                           | NO   |     | NULL    |                |
-# | notes      | text                           | NO   |     | NULL    |                |
-# | type_id    | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | status_id  | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | creator_id | int(10) unsigned               | NO   |     | NULL    |                |
-# | created    | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | updater_id | int(10) unsigned               | NO   |     | NULL    |                |
-# | updated    | int(10) unsigned               | NO   |     | NULL    |                |
-# | viewed     | int(10) unsigned               | NO   |     | NULL    |                |
-# +------------+--------------------------------+------+-----+---------+----------------+
-
-# NOTE: ADD FIELDS: prev_id (int 10), metadata_id (int 10), remove update*,
-# NOTE: Change source and notes fields to allow NULL
-# NOTE: Use status field for marking as edited?
+# +-------------+--------------------------------+------+-----+---------+----------------+
+# | Field       | Type                           | Null | Key | Default | Extra          |
+# +-------------+--------------------------------+------+-----+---------+----------------+
+# | id          | int(10) unsigned               | NO   | PRI | NULL    | auto_increment |
+# | prev_id     | int(11)                        | YES  |     | NULL    |                |
+# | metadata_id | int(11)                        | NO   |     | NULL    |                |
+# | name        | varchar(80)                    | NO   | UNI | NULL    |                |
+# | method      | text                           | NO   |     | NULL    |                |
+# | notes       | text                           | YES  |     | NULL    |                |
+# | source      | varchar(255)                   | YES  |     | NULL    |                |
+# | yield       | varchar(80)                    | NO   |     | NULL    |                |
+# | timereq     | varchar(255)                   | NO   |     | NULL    |                |
+# | timemins    | int(10) unsigned               | NO   | MUL | NULL    |                |
+# | temptype    | enum('C','F','Gas mark','N/A') | NO   |     | NULL    |                |
+# | temp        | smallint(5) unsigned           | YES  |     | NULL    |                |
+# | type_id     | int(10) unsigned               | NO   | MUL | NULL    |                |
+# | status_id   | int(10) unsigned               | NO   | MUL | NULL    |                |
+# | creator_id  | int(10) unsigned               | NO   |     | NULL    |                |
+# | created     | int(10) unsigned               | NO   | MUL | NULL    |                |
+# | viewed      | int(10) unsigned               | NO   |     | NULL    |                |
+# +-------------+--------------------------------+------+-----+---------+----------------+
 
 # +-----------+------------------+------+-----+---------+----------------+
 # | Field     | Type             | Null | Key | Default | Extra          |
