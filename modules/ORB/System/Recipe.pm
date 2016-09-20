@@ -261,15 +261,16 @@ sub _add_recipe_ingredients {
 
     # Prepare the add query to make work easier later
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."`
-                                            (`recipe_id`, `unit_id`, `prep_id`, `ingred_id`, `quantity`, `notes`, `separator`)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?)");
+                                            (`recipe_id`, `position`, `unit_id`, `prep_id`, `ingred_id`, `quantity`, `notes`, `separator`)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
 
     # Now go through each of the ingredients
+    my $position = 0;
     foreach my $ingred (@{$ingredients}) {
 
         # Handle serparators... separately
         if($ingred -> {"separator"}) {
-            $addh -> execute($recipeid, undef, undef, undef, undef, undef, $ingred -> {"name"})
+            $addh -> execute($recipeid, $position, undef, undef, undef, undef, undef, $ingred -> {"name"})
                 or return $self -> self_error("Error adding separator '".$ingred -> {"name"}."': ".$self -> {"dbh"} -> errstr());
 
         # Otherwise, it's a real ingredient, so we need to do the more complex work
@@ -279,12 +280,14 @@ sub _add_recipe_ingredients {
                 or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"ingredient"} -> errstr());
 
             # If we have an ID we can add the ingredient.
-            $addh -> execute($recipeid, $ingred -> {"quant"}, $ingred -> {"units"}, $ingred -> {"prepid"}, $ingid, $ingred -> {"notes"}, undef)
+            $addh -> execute($recipeid, $position, $ingred -> {"units"}, $ingred -> {"prepid"}, $ingid, $ingred -> {"quant"}, $ingred -> {"notes"}, undef)
                 or return $self -> self_error("Unable to add ingredient '".$ingred -> {"name"}."' to recipe '$recipeid': ".$self -> {"dbh"} -> errstr());
 
             # And increase the ingredient refcount
             $self -> {"system"} -> {"ingredients"} -> increase_refcount($ingid);
         }
+
+        ++$position;
     }
 
     # Get here and all worked out okay
