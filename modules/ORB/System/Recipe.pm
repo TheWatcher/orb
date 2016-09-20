@@ -231,6 +231,23 @@ sub set_status {
 }
 
 
+# ============================================================================
+#  Recipe retrieval
+
+sub get_recipe {
+    my $self     = shift;
+    my $recipeid = shift;
+
+
+
+
+
+sub find {
+
+}
+
+
+
 # ==============================================================================
 #  Private methods
 
@@ -299,8 +316,8 @@ sub _add_recipe_ingredients {
 # Add the specified tags to a recipe.
 #
 # @param recipeid  The id of the recipe to add the tags to.
-# @param tags      A string containing a comma-delimited list of tags, or a reference to an
-#                  array of tag names.
+# @param tags      A string containing a comma-delimited list of tags, or a
+#                  reference to an array of tag names.
 # @return true on success, undef on error
 sub _add_recipe_tags {
     my $self     = shift;
@@ -346,6 +363,32 @@ sub _add_recipe_tags {
 
     return 1;
 }
+
+
+## @method private $ _get_recipe_ingredients($recipeid)
+# Fetch the ingredients for the specified recipe, along with any separators
+# in the ingredient list
+#
+# @param recipeid The ID of the recipe to fetch the ingredients for.
+# @return An arrayref of ingredient hashes on success, undef on error.
+sub _get_recipe_ingredients {
+    my $self     = shift;
+    my $recipeid = shift;
+
+    $self -> clear_error();
+
+    my $ingh = $self -> {"dbh"} -> prepare("SELECT `ri`.*, `i`.`name`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `ri`
+                                                 `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `i`
+                                            WHERE `i`.`id` = `ri`.`ingred_id`
+                                            AND `ri`.`recipe_id` = ?
+                                            ORDER BY `ri`.`position`");
+    $ingh -> execute($recipeid)
+        or return $self -> self_error("Ingredient lookup for '$recipeid' failed: ".$self -> {"dbh"} -> errstr());
+
+    return $ingh -> fetchall_arrayref({});
+}
+
 
 
 ## @method private $ _renumber_recipe($sourceid)
