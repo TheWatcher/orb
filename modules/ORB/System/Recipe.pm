@@ -111,7 +111,7 @@ sub new {
 # -      `status`: The recipe status
 # -   `creatorid`: The ID of the user who created the recipe
 # - `ingredients`: A reference to an array of ingredient hashes. See the
-#                  documentation for _add_recipe_ingredients() for the
+#                  documentation for _add_ingredients() for the
 #                  required hash values
 # -        `tags`: The tags to set for the recipe, may be either a comma
 #                  separated string of tags, or a reference to an array
@@ -154,11 +154,11 @@ sub create {
         or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
 
     # Add the ingredients for the recipe
-    $self -> _add_recipe_ingredients($newid, $args -> {"ingredients"})
+    $self -> _add_ingredients($newid, $args -> {"ingredients"})
         or return undef;
 
     # And the tags
-    $self -> _add_recipe_tags($newid, $args -> {"tags"})
+    $self -> _add_tags($newid, $args -> {"tags"})
         or return undef;
 
     return $newid;
@@ -234,12 +234,43 @@ sub set_status {
 # ============================================================================
 #  Recipe retrieval
 
+## @method $ get_recipe($recipeid)
+# Given a recipe ID, attempt to fetch the data for the recipe, including its
+# ingredient and tags lists.
+#
+# @param recipeid The ID of the recipe to fetch the data for
+# @return A reference to a hash contianing the recipe data on success, an
+#         empty hash if the recipe can't be located, and undef on error.
 sub get_recipe {
     my $self     = shift;
     my $recipeid = shift;
 
+    $self -> clear_error();
 
+    # Fetch the recipe itself, along with names of singular relations
+    my $recipeh = $self -> {"dbh"} -> prepare("SELECT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t`
+                                               WHERE `s`.`id` = `r`.`status_id`
+                                               AND `t`.`id` = `r`.`type_id`
+                                               AND `r`.`id` = ?");
+    $recipeh -> execute($recipeid)
+        or return $self -> self_error("Unable to perform recipe lookup: ".$self -> {"dbh"} -> errstr);
 
+    my $recipe = $recipeh -> fetchrow_hashref()
+        or return {}; # Empty hash on missing recipe
+
+    # Now pull in the other information about the recipe; ingredients, and tags
+    $recipe -> {"ingredients"} = $self -> _get_ingredients($recipeid)
+        or return undef;
+
+    $recipe -> {"tags"} = $self -> _get_tags($recipeid)
+        or return undef;
+
+    # Should be everything specifically recipe related now...
+    return $recipe;
+}
 
 
 sub find {
@@ -248,10 +279,12 @@ sub find {
 
 
 
+
+
 # ==============================================================================
 #  Private methods
 
-## @method private $ _add_recipe_ingredients($recipeid, $ingredients)
+## @method private $ _add_ingredients($recipeid, $ingredients)
 # Add the specified ingredients to the recipe list for the specified recipe.
 # This goes through the array of ingredients and adds each entry to the
 # ingredient list for the specified recipe. The ingredients are specified
@@ -271,7 +304,7 @@ sub find {
 # @param ingredients A reference to an array of hashes containing ingredient
 #                    specifications.
 # @return true on success, undef on error
-sub _add_recipe_ingredients {
+sub _add_ingredients {
     my $self        = shift;
     my $recipeid    = shift;
     my $ingredients = shift;
@@ -312,14 +345,14 @@ sub _add_recipe_ingredients {
 }
 
 
-## @method private $ _add_recipe_tags($recipeid, $tags)
+## @method private $ _add_tags($recipeid, $tags)
 # Add the specified tags to a recipe.
 #
 # @param recipeid  The id of the recipe to add the tags to.
 # @param tags      A string containing a comma-delimited list of tags, or a
 #                  reference to an array of tag names.
 # @return true on success, undef on error
-sub _add_recipe_tags {
+sub _add_tags {
     my $self     = shift;
     my $recipeid = shift;
     my $tags     = shift;
@@ -340,7 +373,7 @@ sub _add_recipe_tags {
 
     # If $tags is a reference, it has to be an array!
     } elsif(ref($tags) ne "ARRAY") {
-        return $self -> self_error("Unsupported reference passed to _add_recipe_tags(). Giving up.");
+        return $self -> self_error("Unsupported reference passed to _add_tags(). Giving up.");
     }
 
     # Now we prepare the tag insert query for action
@@ -365,13 +398,13 @@ sub _add_recipe_tags {
 }
 
 
-## @method private $ _get_recipe_ingredients($recipeid)
+## @method private $ _get_ingredients($recipeid)
 # Fetch the ingredients for the specified recipe, along with any separators
 # in the ingredient list
 #
 # @param recipeid The ID of the recipe to fetch the ingredients for.
 # @return An arrayref of ingredient hashes on success, undef on error.
-sub _get_recipe_ingredients {
+sub _get_ingredients {
     my $self     = shift;
     my $recipeid = shift;
 
@@ -379,7 +412,7 @@ sub _get_recipe_ingredients {
 
     my $ingh = $self -> {"dbh"} -> prepare("SELECT `ri`.*, `i`.`name`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `ri`
-                                                 `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `i`
+                                                 `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `i`
                                             WHERE `i`.`id` = `ri`.`ingred_id`
                                             AND `ri`.`recipe_id` = ?
                                             ORDER BY `ri`.`position`");
@@ -389,6 +422,35 @@ sub _get_recipe_ingredients {
     return $ingh -> fetchall_arrayref({});
 }
 
+
+## @method private $ _get_tags($recipeid)
+# Fetch the tags for the specified recipe.
+#
+# @param recipeid The ID of the recipe to fetch the tags for.
+# @return A reference to an array of tag names on success, undef on error.
+sub _get_tags {
+    my $self     = shift;
+    my $recipeid = shift;
+
+    $self -> clear_error();
+
+    my $tagh = $self -> {"dbh"} -> prepare("SELECT `t`.`name`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"recipetags"}."` AS `rt`
+                                                 `".$self -> {"settings"} -> {"database"} -> {"tags"}."` AS `t`
+                                            WHERE `t`.`id` = `rt`.`ingred_id`
+                                            AND `rt`.`recipe_id` = ?
+                                            ORDER BY `t`.`name`");
+    $tagh -> execute($recipeid)
+        or return $self -> self_error("Tag lookup for '$recipeid' failed: ".$self -> {"dbh"} -> errstr());
+
+    # No easy way to fetch a flat list of tags, so do it the mechanistic way...
+    my @tags = ();
+    while(my $tag = $tagh -> fetchrow_arrayref()) {
+        push(@tags, $tag -> [0]);
+    }
+
+    return \@tags;
+}
 
 
 ## @method private $ _renumber_recipe($sourceid)
@@ -466,6 +528,23 @@ sub _fix_recipe_relations {
         or return $self -> self_error("Ingredient relation fixup failed: ".$self -> {"dbh"} -> errstr());
 
     return 1;
+}
+
+
+sub _find_by_ingredient {
+    my $self = shift;
+    my $ingredient = shift;
+
+    my $findh = $self -> {"dbh"} -> prepare("SELECT `r`.`id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `i`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `ing`
+                                             WHERE `ing`.`name` LIKE '?'
+                                             AND `i`.`ingred_id` = `ing`.`id`
+                                             AND `r`.`id` = `i`.`recipe_id`");
+    $findh -> execute($ingredient)
+        or return $self -> self_error("Unable to search for recipes by ingredient: ".$self -> {"dbh"} -> errstr);
+
 }
 
 
