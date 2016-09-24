@@ -60,7 +60,7 @@ use strict;
 use parent qw(Webperl::SystemModule);
 use v5.14;
 
-use Webperl::Utils qw(hash_or_hashref);
+use Webperl::Utils qw(hash_or_hashref array_or_arrayref);
 
 
 # ============================================================================
@@ -531,18 +531,27 @@ sub _fix_recipe_relations {
 }
 
 
+## @method private $ _find_by_ingredient($
 sub _find_by_ingredient {
-    my $self = shift;
-    my $ingredient = shift;
+    my $self    = shift;
+    my $ingreds = shift;
+
+    $ingreds = [ $ingreds ]
+        unless(ref($ingreds) eq "ARRAY");
+
+    my @names  = ();
+    foreach my $ingred (@{$ingreds}) {
+        push(@names, "`ing`.`name` LIKE ?");
+    }
 
     my $findh = $self -> {"dbh"} -> prepare("SELECT `r`.`id`
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `i`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `ing`
-                                             WHERE `ing`.`name` LIKE '?'
+                                             WHERE ($names)
                                              AND `i`.`ingred_id` = `ing`.`id`
                                              AND `r`.`id` = `i`.`recipe_id`");
-    $findh -> execute($ingredient)
+    $findh -> execute(@{$ingreds})
         or return $self -> self_error("Unable to search for recipes by ingredient: ".$self -> {"dbh"} -> errstr);
 
 }
