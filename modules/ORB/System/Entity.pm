@@ -133,8 +133,18 @@ sub destroy {
         unless($args -> {"id"} || $args -> {"name"});
 
     # Convert name to ID if needed
-    $args -> {"id"} = $self -> _fetch_id($args -> {"name"})
-        unless($args -> {"id"});
+    if(!$args -> {"id"}) {
+        my $id = $self -> find_ids($args -> {"name"})
+            or return undef;
+
+        return $self -> self_error("No match for specified entity name '".$args -> {"name"}."'")
+            unless(scalar(@{$id}));
+
+        return $self -> self_error("Multiple matches for specified entity name '".$args -> {"name"}."'. Destroy unsafe, aborting")
+            if(scalar(@{$id}) > 1);
+
+        $args -> {"id"} = $id -> [0] -> {"id"};
+    }
 
     # fall over if the relations argument is specified, but it's not a hash or arrayref
     return $self -> self_error("destroy invoked with invalid relations data")
@@ -187,12 +197,68 @@ sub get_id {
     my $self = shift;
     my $name = shift;
 
-    my $id = $self -> _fetch_id($name);
-    return $id if(!defined($id) || $id); # return undefs, or non-zero ids.
+    my $id = $self -> find_ids($name)
+        or return undef;
+
+    # Single result, return that ID.
+    return $id -> [0] -> {"id"}
+        if(scalar(@{$id} == 1));
+
+    # Multiple results are potentially dangerous. Log it as an error, but return the first hit anyway
+    if(scalar(@{$id}) > 1) {
+        $self -> self_error("Multiple matches for specified entity name '".$args -> {"name"}."'");
+        return $id -> [0]
+    }
 
     # Get here, and $id is zero - no entity exists with the specified name, so
     # a new entity is needed.
     return $self -> create($name);
+}
+
+
+## @method $ find_ids($names)
+# Given a name, or list of names, obtain the IDs that correspond to those names in the
+# entity table. Note that, unlike get_id(), this will not create entities if no matching
+# name is found.
+#
+# @param names The name of the entity to find, or a reference to an array of names.
+# @return A reference to an array of hashes containing the names and ID(s) of the
+#         entities with the specified names on success, an empty arrayref if no
+#         matches exist, undef on error occurred.
+sub find_ids {
+    my $self  = shift;
+    my $names = shift;
+
+    $self -> clear_error();
+
+    # No names, nothing to do.
+    return [] unless($names);
+
+    # Make sure that the names is an arrayref for easier processing.
+    $names = [ $names ]
+        unless(ref($names) eq "ARRAY");
+
+    # Check and fixup the specified names.
+    foreach my $name (@{$names}) {
+        # All elements must be non-null/empty
+        return $self -> self_error("Invalid undef/empty argument passed to find_ids()")
+            unless($name);
+
+        # Replace any wildcard markers
+        $name =~ s/\*/%/g;
+    }
+
+    # Build and execute a query that matches the specified name(s)
+    my $wherefrag = join(" OR ", (("`name` LIKE ?") x scalar(@{$names})));
+    my $entityh = $self -> {"dbh"} -> prepare("SELECT `id`,`name`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
+                                               WHERE $wherefrag
+                                               ORDER BY `name`,`id`");
+    $entityh -> execute(@{$names})
+        or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
+
+    # And return the list of matches
+    return $entityh -> fwetchall_arrayref({});
 }
 
 
@@ -274,39 +340,6 @@ sub decrease_refcount {
         unless($retain_unused || $result);
 
     return defined($result);
-}
-
-
-# ============================================================================
-#  ID lookup
-
-## @method protected $ _fetch_id($name)
-# Given an entity name, attempt to find a record for that name. This will locate the
-# first defined entity whose name matches the provided name. Note that if there are
-# duplicate entities in the system, this will never find duplicates - it is guaranteed to
-# find the entity with the lowest ID whose name matches the provided value, or nothing.
-#
-# @param name The name of the entity to find.
-# @return The ID of the entity with the specified name on success, 0 if it does not exist,
-#         undef on error occurred.
-sub _fetch_id {
-    my $self  = shift;
-    my $name  = shift;
-
-    $self -> clear_error();
-
-    # Simple lookup. If the name field is set up as a _ci field, this will be case insensitive
-    my $entityh = $self -> {"dbh"} -> prepare("SELECT `id`
-                                               FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
-                                               WHERE `name` LIKE ?
-                                               ORDER BY `id`
-                                               LIMIT 1"); # Limit to avoid pulling multiple rows if there are duplicates.
-    $entityh -> execute($name)
-        or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
-
-    # Return the ID if we have located it
-    my $entityrow = $entityh-> fetchrow_arrayref();
-    return $entityrow ? $entityrow -> [0] : 0;
 }
 
 
