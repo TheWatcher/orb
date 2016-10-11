@@ -332,7 +332,7 @@ sub find {
         or return $self -> self_error("Ingredient lookup error: ".$self -> {"system"} -> {"ingredients"} -> errstr());
 
     # Fix the array returned from find_ids so that we only have the id numbers
-    $args -> {"ingredientids"} = $self -> _hashlist_to_list($ingreds, "id");
+    $args -> {"ingredids"} = $self -> _hashlist_to_list($ingreds, "id");
 
     # Repeat the process for the recipe tags
     my $tags = $self -> {"system"} -> {"tags"} -> find_ids($args -> {"tags"})
@@ -347,8 +347,8 @@ sub find {
     my (@params, $joins, @where) = ((), "", ());
 
     # Matching all ingredients or tags requires multiple inner joins
-    $joins .= $self -> _join_fragment($args -> {"ingredientids"}, $self -> {"system"} -> {"ingredients"} -> {"entity_table"}, \@params)
-        if(scalar(@{$args -> {"ingredientids"}}) && $args -> {"ingredmatch"} eq "all");
+    $joins .= $self -> _join_fragment($args -> {"ingredids"}, $self -> {"system"} -> {"ingredients"} -> {"entity_table"}, \@params)
+        if(scalar(@{$args -> {"ingredids"}}) && $args -> {"ingredmatch"} eq "all");
     $joins .= $self -> _join_fragment($args -> {"tagids"}, $self -> {"system"} -> {"tags"} -> {"entity_table"}, \@params)
         if(scalar(@{$args -> {"tagids"}}) && $args -> {"tagmatch"} eq "all");
 
@@ -375,8 +375,15 @@ sub find {
     }
 
     # Handle 'OR' case for ingredients and tags
-# ARGH. Can we naively do a `WHERE `ri`.`ingred_id` IN ( ... list of IDs.... ) here?
-#    push(@where, $self -> _multi_where_fragment("`r`.`in
+    if(scalar(@{$args -> {"ingredids"}}) && $args -> {"ingredmatch"} eq "any") {
+        $joins .= " INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `ri` ON `r`.`id` = `ri`.`recipe_id` ";
+        push(@where, $self -> _multi_where_fragment("`ri`.`ingred_id` IN ", $args -> {"ingredids"}, \@params));
+    }
+
+    if(scalar(@{$args -> {"tagids"}}) && $args -> {"tagmatch"} eq "any") {
+        $joins .= " INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"recipetags"}."` AS `rt` ON `r`.`id` = `rt`.`recipe_id` ";
+        push(@where, $self -> _multi_where_fragment("`rt`.`tag_id` IN ", $args -> {"tagids"}, \@params));
+    }
 
     # Squish all the where conditions into a string
     my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where);
@@ -393,7 +400,7 @@ sub find {
     }
 
     # Build and run the search query
-    my $query = "SELECT `r`.*, `s`.name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
+    my $query = "SELECT DISTINCT `r`.*, `s`.name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
                  INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s` ON `s`.`id` = `r`.`status_id`
                  INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t` ON `t`.`id` = `r`.`type_id`
