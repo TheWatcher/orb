@@ -273,12 +273,141 @@ sub get_recipe {
 }
 
 
+## @method $ find(%args)
+# Attempt to locate recipes that match the criteria specified. Supported search
+# criteria are given below. Criteria marked with * perform embedded string
+# matching, and may further contain % or * to do additional matching, and
+# all the criteria are optional.
+#
+# - `name`: search based on strings in the name field*
+# - `method`: search based on strings in the method*
+# - `notes`: search based on strings in the notes*
+# - `type`: find recipes of the specified type.
+# - `status`: find recipes with the specified status.
+# - `time`: do a time-based search. This should be a time required in minutes.
+#           How this operates depends on the value of `timemode`.
+# - `timemode`: control how time searching works. This can either be '>=' or
+#           '<=': in the former case the search will return recipes that take
+#           `time` minutes or more, in the latter it will find recipes that
+#           take `time` minutes or less. Defaults to '<='.
+# - `ingredients`: A reference to an array of ingredient names. This allows
+#           the caller to search for recipes that use the specified ingredients
+#           subject to the logic imposed by `ingredmatch`. Automatic substring
+#           matching *is not* performed for ingredients, but * or % in the
+#           ingredient names may be used to do wildcard searches.
+# - `ingredmatch`: Control how ingredient searching works. This can either be
+#           "all" or "any" (default is "all"). If this is set to "all", only
+#           recipes that use all the specified ingredients are returned, if
+#           it is set to "any" then recipes that use any of the ingredients
+#           will be returned.
+# - `tags`: A reference to an array of tag names. This allows the caller to
+#           search for recipes with one or more tags associated with them,
+#           subject to the logic imposed by `tagmatch`. Automatic substring
+#           matching *is not* performed for tags, but * or % in the
+#           tag names may be used to do wildcard searches.
+# - `tagmatch`: control how tag searching works. As with `ingredmatch`, this
+#           may be "all" or "any", with corresponding behaviour.
+# - `limit`: how many recipies may be returned by the find()
+# - `offset`: offset from the start of the query results.
+# - `searchmode`: This may be "all", in which only recipes that match all the
+#           specified criteria are returned, or "any" in which case
+#           recipes that match any of the criteria will be returned. This
+#           defaults to "all". Note that this breaks slightly with ingredient
+#           and tag searching: if the `ingredmatch` or `tagmatch` are set to
+#           "all", only recipes that pass those checks will have any other
+#           search criteria applied to them - recipes that do not match
+#           will not be considered, even if they might match other criteria.
+#
+# @param args A hash, or reference to a hash, of criteria to use when searching.
+# @return A reference to an array of recipe records.
 sub find {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
+    $self -> clear_error();
+
+    # Convert ingredients and tags to IDs for easier query structure
+    # This will return an empty array if there are no ingredients to search on
+    my $ingreds = $self -> {"system"} -> {"ingredients"} -> find_ids($args -> {"ingredients"})
+        or return $self -> self_error("Ingredient lookup error: ".$self -> {"system"} -> {"ingredients"} -> errstr());
+
+    # Fix the array returned from find_ids so that we only have the id numbers
+    $args -> {"ingredientids"} = $self -> _hashlist_to_list($ingreds, "id");
+
+    # Repeat the process for the recipe tags
+    my $tags = $self -> {"system"} -> {"tags"} -> find_ids($args -> {"tags"})
+        or return $self -> self_error("Tag lookup error: ".$self -> {"system"} -> {"tags"} -> errstr());
+    $args -> {"tagids"} = $self -> _hashlist_to_list($tags, "id");
+
+    # Fix up default matching modes
+    $args -> {"ingredmatch"} = "all" unless($args -> {"ingredmatch"} eq "any");
+    $args -> {"tagmatch"}    = "all" unless($args -> {"tagmatch"} eq "any");
+
+    # Now start the process of building the query
+    my (@params, $joins, @where) = ((), "", ());
+
+    # Matching all ingredients or tags requires multiple inner joins
+    $joins .= $self -> _join_fragment($args -> {"ingredientids"}, $self -> {"system"} -> {"ingredients"} -> {"entity_table"}, \@params)
+        if(scalar(@{$args -> {"ingredientids"}}) && $args -> {"ingredmatch"} eq "all");
+    $joins .= $self -> _join_fragment($args -> {"tagids"}, $self -> {"system"} -> {"tags"} -> {"entity_table"}, \@params)
+        if(scalar(@{$args -> {"tagids"}}) && $args -> {"tagmatch"} eq "all");
+
+    # Simple searches on recipe fields
+    push(@where, $self -> _where_fragment("`r`.`name` LIKE ?", $args -> {"name"}, 1, \@params))
+        if($args -> {"name"});
+
+    push(@where, $self -> _where_fragment("`r`.`method` LIKE ?", $args -> {"method"}, 1, \@params))
+        if($args -> {"method"});
+
+    push(@where, $self -> _where_fragment("`r`.`notes` LIKE ?", $args -> {"notes"}, 1, \@params))
+        if($args -> {"notes"});
+
+    push(@where, $self -> _where_fragment("`st`.`name` LIKE ?", $args -> {"status"}, 0, \@params))
+        if($args -> {"status"});
+
+    push(@where, $self -> _where_fragment("`ty`.`name` LIKE ?", $args -> {"type"}, 0, \@params))
+        if($args -> {"type"});
+
+    # Handling time specification is a bit tricker.
+    if($args -> {"time"} && $args -> {"time"} =~ /^\d+$/) {
+        $args -> {"timemode"} = "<=" unless($args -> {"timemode"} eq ">=");
+        push(@where, $self -> _where_fragment("`r`.`timereq` ".$args -> {"timemode"}." ?", $args -> {"time"}, 0, \@params));
+    }
+
+    # Handle 'OR' case for ingredients and tags
+# ARGH. Can we naively do a `WHERE `ri`.`ingred_id` IN ( ... list of IDs.... ) here?
+#    push(@where, $self -> _multi_where_fragment("`r`.`in
+
+    # Squish all the where conditions into a string
+    my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where);
+
+    # Construct the limit term when limit (and optionally offset) are
+    # specified by the caller
+    my $limit = "";
+    if($args -> {"limit"} && $args -> {"limit"} =~ /^\d+$/) {
+        $limit = "LIMIT ";
+        $limit .= $args -> {"offset"}.", "
+            if($args -> {"offset"} && $args -> {"offset"} =~ /^\d+$/);
+
+        $limit .= $args -> {"limit"};
+    }
+
+    # Build and run the search query
+    my $query = "SELECT `r`.*, `s`.name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
+                 FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s` ON `s`.`id` = `r`.`status_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t` ON `t`.`id` = `r`.`type_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u` ON `u`.`user_id` = `r`.`creator_id`
+                 $joins
+                 WHERE $wherecond
+                 ORDER BY `r`.`name` ASC, `r`.`created` DESC
+                 $limit";
+    my $search = $self -> {"dbh"} -> prepare($query);
+    $search -> execute(@params)
+        or return $self -> self_error("Unable ot perform recipe search: ".$self -> {"dbh"} -> errstr);
+
+    return $search -> fetchall_arrayref({});
 }
-
-
-
 
 
 # ==============================================================================
@@ -325,16 +454,24 @@ sub _add_ingredients {
 
         # Otherwise, it's a real ingredient, so we need to do the more complex work
         } else {
-            # obtain the ingredient id
-            my $ingid = $self -> {"ingredients"} -> get_id($ingred -> {"name"})
-                or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"ingredient"} -> errstr());
+            # obtain the IDs of entities referenced by this ingredient relation
+            my $ingid = $self -> {"system"} -> {"ingredients"} -> get_id($ingred -> {"name"})
+                or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"system"} -> {"ingredient"} -> errstr());
+
+            my $unitid = $self -> {"system"} -> {"units"} -> get_id($ingred -> {"units"})
+                or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"system"} -> {"units"} -> errstr());
+
+            my $prepid = $self -> {"system"} -> {"prepmethod"} -> get_id($ingred -> {"prep"})
+                or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"system"} -> {"prepmethod"} -> errstr());
 
             # If we have an ID we can add the ingredient.
-            $addh -> execute($recipeid, $position, $ingred -> {"units"}, $ingred -> {"prepid"}, $ingid, $ingred -> {"quant"}, $ingred -> {"notes"}, undef)
+            $addh -> execute($recipeid, $position, $unitid, $prepid, $ingid, $ingred -> {"quant"}, $ingred -> {"notes"}, undef)
                 or return $self -> self_error("Unable to add ingredient '".$ingred -> {"name"}."' to recipe '$recipeid': ".$self -> {"dbh"} -> errstr());
 
-            # And increase the ingredient refcount
+            # And increase the entity refcounts
             $self -> {"system"} -> {"ingredients"} -> increase_refcount($ingid);
+            $self -> {"system"} -> {"units"}       -> increase_refcount($unitid);
+            $self -> {"system"} -> {"prepmethod"}  -> increase_refcount($prepid);
         }
 
         ++$position;
@@ -531,32 +668,6 @@ sub _fix_recipe_relations {
 }
 
 
-## @method private $ _find_by_ingredient($
-sub _find_by_ingredient {
-    my $self    = shift;
-    my $ingreds = shift;
-
-    $ingreds = [ $ingreds ]
-        unless(ref($ingreds) eq "ARRAY");
-
-    my @names  = ();
-    foreach my $ingred (@{$ingreds}) {
-        push(@names, "`ing`.`name` LIKE ?");
-    }
-
-    my $findh = $self -> {"dbh"} -> prepare("SELECT `r`.`id`
-                                             FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `i`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `ing`
-                                             WHERE ($names)
-                                             AND `i`.`ingred_id` = `ing`.`id`
-                                             AND `r`.`id` = `i`.`recipe_id`");
-    $findh -> execute(@{$ingreds})
-        or return $self -> self_error("Unable to search for recipes by ingredient: ".$self -> {"dbh"} -> errstr);
-
-}
-
-
 # ==============================================================================
 #  Metadata related
 
@@ -608,4 +719,86 @@ sub _create_recipe_metadata {
     return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Recipe:base_metadata"} // 1);
 }
 
+
+# ==============================================================================
+#  Miscellaneous horribleness
+
+## @method private $ _hashlist_to_list($hashlist, $field)
+# Given a reference to an array of hashrefs, generate an array containing the
+# values stored in specific fields in each hashref. For example, given an array
+# that looks like
+#
+# [
+#   { "id" => 10, "name" => "foo" },
+#   { "id" => 11, "name" => "bar" },
+#   { "id" => 12, "name" => "foobar" },
+#   { "id" => 13, "name" => "barfoo" },
+# ]
+#
+# if $field is set to "name", this will return the array
+#
+# [ 'foo', 'bar', 'foobar', 'barfoo' ]
+#
+# @param hashlist A reference to an array of hashrefs.
+# @param field    The name of the field in the hash that contains the values
+#                 to return.
+# @return A reference to an array of values pulled out of the hashes.
+sub _hashlist_to_list {
+    my $self     = shift;
+    my $hashlist = shift;
+    my $field    = shift;
+
+    my @res = map { $_ -> {$field} } @{$hashlist};
+
+    return \@res;
+}
+
+
+## @method private $ _join_fragment($idlist, $table, $params)
+# Generate an inner join fragment to append to the table list of a search
+# query. This is used to restrict the results to recipes that use certain
+# incredients or have specific tags associated with them.
+#
+# @param idlist A reference to an array of IDs to match with inner joins
+# @param table  The relation table to join against
+# @param params A reference to an array of parameters that will be passed
+#               to execute() and replace value markers in the query
+# @return A string containing the inner joins
+sub _join_fragment {
+    my $self   = shift;
+    my $idlist = shift;
+    my $table  = shift;
+    my $params = shift;
+    my $result = "";
+
+    foreach my $id (@{$idlist}) {
+        $result .= " INNER JOIN `$table` AS `ij$id` ON `r`.`id` = `ij$id`.`recipe_id` AND `ij$id`.`ingred_id` = ?";
+        push(@{$params}, $id);
+    }
+
+    return $result;
+}
+
+
+## @method pricate $ _where_fragment($frag, $value, $wild, $params)
+# Prepare values for inclusion in the WHERE section of the query
+sub _where_fragment {
+    my $self   = shift;
+    my $frag   = shift;
+    my $value  = shift;
+    my $wild   = shift;
+    my $params = shift;
+
+    # Add missing % if wildcards are enabled
+    if($wild) {
+        $value = "%".$value unless($value =~ /^\%/);
+        $value = $value."%" unless($value =~ /\%$/);
+        $value =~ s/\*/%/g; # convert UI wildcard character to mysql
+    }
+
+    # And store the value in the execute parameters
+    push(@{$params}, $value);
+
+    return $frag;
+}
 1;
