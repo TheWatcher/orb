@@ -54,14 +54,14 @@ sub init {
         or return undef;
 
     $self -> {"metadata"} = ORB::System::Metadata -> new(dbh      => $self -> {"dbh"},
-                                                            settings => $self -> {"settings"},
-                                                            logger   => $self -> {"logger"})
+                                                         settings => $self -> {"settings"},
+                                                         logger   => $self -> {"logger"})
         or return $self -> self_error("Metadata system init failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"roles"} = ORB::System::Roles -> new(dbh      => $self -> {"dbh"},
-                                                      settings => $self -> {"settings"},
-                                                      logger   => $self -> {"logger"},
-                                                      metadata => $self -> {"metadata"})
+                                                   settings => $self -> {"settings"},
+                                                   logger   => $self -> {"logger"},
+                                                   metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;
