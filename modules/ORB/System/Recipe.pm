@@ -248,7 +248,7 @@ sub get_recipe {
     $self -> clear_error();
 
     # Fetch the recipe itself, along with names of singular relations
-    my $recipeh = $self -> {"dbh"} -> prepare("SELECT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`
+    my $recipeh = $self -> {"dbh"} -> prepare("SELECT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`, `u`.`user_id`, `u`,`username`, `u`,`realname`
                                                FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
                                                     `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`,
                                                     `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t`
@@ -261,14 +261,28 @@ sub get_recipe {
     my $recipe = $recipeh -> fetchrow_hashref()
         or return {}; # Empty hash on missing recipe
 
-    # Now pull in the other information about the recipe; ingredients, and tags
-    $recipe -> {"ingredients"} = $self -> _get_ingredients($recipeid)
-        or return undef;
-
-    $recipe -> {"tags"} = $self -> _get_tags($recipeid)
-        or return undef;
-
     # Should be everything specifically recipe related now...
+    return $self -> load_recipe_relations($recipe)
+}
+
+
+## @method $ load_recipe_relations($recipe)
+# Fetch the supporting information for the specified recipe. This will load
+# additional information about the recipe (ingredients, tags, ...) into the
+# recipe hash.
+#
+# @param recipe A reference to a hash containing the recipe data
+# @return A reference to a hash containing the expanded recipe data.
+sub load_recipe_relations {
+    my $self   = shift;
+    my $recipe = shift;
+
+    $recipe -> {"ingredients"} = $self -> _get_ingredients($recipe -> {"id"})
+        or return undef;
+
+    $recipe -> {"tags"} = $self -> _get_tags($recipe -> {"id"})
+        or return undef;
+
     return $recipe;
 }
 
