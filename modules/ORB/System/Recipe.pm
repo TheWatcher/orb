@@ -17,40 +17,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class Recipe
-# +-------------+--------------------------------+------+-----+---------+----------------+
-# | Field       | Type                           | Null | Key | Default | Extra          |
-# +-------------+--------------------------------+------+-----+---------+----------------+
-# | id          | int(10) unsigned               | NO   | PRI | NULL    | auto_increment |
-# | prev_id     | int(11)                        | YES  |     | NULL    |                |
-# | metadata_id | int(11)                        | NO   |     | NULL    |                |
-# | name        | varchar(80)                    | NO   | UNI | NULL    |                |
-# | method      | text                           | NO   |     | NULL    |                |
-# | notes       | text                           | YES  |     | NULL    |                |
-# | source      | varchar(255)                   | YES  |     | NULL    |                |
-# | yield       | varchar(80)                    | NO   |     | NULL    |                |
-# | timereq     | varchar(255)                   | NO   |     | NULL    |                |
-# | timemins    | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | temptype    | enum('C','F','Gas mark','N/A') | NO   |     | NULL    |                |
-# | temp        | smallint(5) unsigned           | YES  |     | NULL    |                |
-# | type_id     | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | status_id   | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | creator_id  | int(10) unsigned               | NO   |     | NULL    |                |
-# | created     | int(10) unsigned               | NO   | MUL | NULL    |                |
-# | viewed      | int(10) unsigned               | NO   |     | NULL    |                |
-# +-------------+--------------------------------+------+-----+---------+----------------+
+# +-------------+--------------------------------+------+-----+----------------+
+# | Field       | Type                           | Null | Key | Extra          |
+# +-------------+--------------------------------+------+-----+----------------+
+# | id          | int(10) unsigned               | NO   | PRI | auto_increment |
+# | prev_id     | int(11)                        | YES  |     |                |
+# | metadata_id | int(11)                        | NO   |     |                |
+# | name        | varchar(80)                    | NO   | UNI |                |
+# | method      | text                           | NO   |     |                |
+# | notes       | text                           | YES  |     |                |
+# | source      | varchar(255)                   | YES  |     |                |
+# | yield       | varchar(80)                    | NO   |     |                |
+# | timereq     | varchar(255)                   | NO   |     |                |
+# | timemins    | int(10) unsigned               | NO   | MUL |                |
+# | temptype    | enum('C','F','Gas mark','N/A') | NO   |     |                |
+# | temp        | smallint(5) unsigned           | YES  |     |                |
+# | type_id     | int(10) unsigned               | NO   | MUL |                |
+# | status_id   | int(10) unsigned               | NO   | MUL |                |
+# | creator_id  | int(10) unsigned               | NO   |     |                |
+# | created     | int(10) unsigned               | NO   | MUL |                |
+# | viewed      | int(10) unsigned               | NO   |     |                |
+# +-------------+--------------------------------+------+-----+----------------+
 
-# +-----------+------------------+------+-----+---------+----------------+
-# | Field     | Type             | Null | Key | Default | Extra          |
-# +-----------+------------------+------+-----+---------+----------------+
-# | id        | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
-# | recipe_id | int(10) unsigned | NO   | MUL | NULL    |                |
-# | unit_id   | int(10) unsigned | YES  |     | NULL    |                |
-# | prep_id   | int(10) unsigned | YES  |     | NULL    |                |
-# | ingred_id | int(10) unsigned | YES  |     | NULL    |                |
-# | quantity  | varchar(8)       | YES  |     | NULL    |                |
-# | notes     | varchar(255)     | YES  |     | NULL    |                |
-# | separator | varchar(255)     | YES  |     | NULL    |                |
-# +-----------+------------------+------+-----+---------+----------------+
+# +-----------+------------------+------+-----+----------------+
+# | Field     | Type             | Null | Key | Extra          |
+# +-----------+------------------+------+-----+----------------+
+# | id        | int(10) unsigned | NO   | PRI | auto_increment |
+# | recipe_id | int(10) unsigned | NO   | MUL |                |
+# | unit_id   | int(10) unsigned | YES  |     |                |
+# | prep_id   | int(10) unsigned | YES  |     |                |
+# | ingred_id | int(10) unsigned | YES  |     |                |
+# | quantity  | varchar(8)       | YES  |     |                |
+# | notes     | varchar(255)     | YES  |     |                |
+# | separator | varchar(255)     | YES  |     |                |
+# +-----------+------------------+------+-----+----------------+
 #
 #
 
@@ -89,8 +89,8 @@ sub new {
 #  Recipe creation and status modification
 
 ## @method $ create(%args)
-# Create a new recipe in the system. The args hash can contain the following, all
-# fields are required unless indicated otherwise:
+# Create a new recipe in the system. The args hash can contain the following,
+# all fields are required unless indicated otherwise:
 #
 # -      `previd`: (optional) ID of the recipe this is an edit of. If specified,
 #                  the old recipe has its state set to 'edited', and the
@@ -141,8 +141,11 @@ sub create {
                                             (`id`, `metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`)
                                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP())");
     my $result = $newh -> execute($args -> {"id"}, $metadataid, $args -> {"previd"}, $args -> {"name"}, $args -> {"source"}, $args -> {"timereq"}, $args -> {"timemins"}, $args -> {"yield"}, $args -> {"temp"}, $args -> {"temptype"}, $args -> {"method"}, $args -> {"notes"}, $args -> {"typeid"}, $args -> {"statusid"}, $args -> {"creatorid"});
-    return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr) if(!$result);
-    return $self -> self_error("No rows added when inserting recipe.") if($result eq "0E0");
+    return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr)
+        if(!$result);
+
+    return $self -> self_error("No rows added when inserting recipe.")
+        if($result eq "0E0");
 
     my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
 
@@ -184,8 +187,9 @@ sub edit {
     return $self -> self_error("edit called without previous recipe ID")
         unless($args -> {"previd"});
 
-    # Move the old recipe to the end of the table, but keep a record of its current ID
-    $args -> {"id"} = $args -> {"previd"};
+    # Move the old recipe to the end of the table, but keep a record
+    # of its current ID
+    $args -> {"id"}     = $args -> {"previd"};
     $args -> {"previd"} = $self -> _renumber_recipe($args -> {"previd"});
 
     # Create a new one at the old ID
@@ -193,7 +197,8 @@ sub edit {
         or return undef;
 
     # Set the status of the edited recipe
-    $self -> set_state($args -> {"previd"}, $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited")
+    $self -> set_state($args -> {"previd"},
+                       $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited")
         or return undef;
 
     return $args -> {"id"};
@@ -224,8 +229,11 @@ sub set_status {
                                               SET `status_id` = ?
                                               WHERE `id` = ?");
     my $result = $stateh -> execute($statusid, $recipeid);
-    return $self -> self_error("Status update of recipe failed: ".$self -> {"dbh"} -> errstr) if(!$result);
-    return $self -> self_error("No rows modified when updating recipe state.") if($result eq "0E0");
+    return $self -> self_error("Status update of recipe failed: ".$self -> {"dbh"} -> errstr)
+        if(!$result);
+
+    return $self -> self_error("No rows modified when updating recipe state.")
+        if($result eq "0E0");
 
     return 1;
 }
