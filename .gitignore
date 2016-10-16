@@ -3,3 +3,6 @@ autodocs/
 config/*.cfg
 .emacs.desktop
 .emacs.desktop.lock
+templates/default/foundation
+templates/default/js_*
+templates/default/css_*
