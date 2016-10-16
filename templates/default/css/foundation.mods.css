@@ -1,0 +1,23 @@
+/* Remove margins from selected elements */
+.nomargin {
+    margin: 0 0;
+}
+
+/* Label to the right of switches */
+.switch-label {
+    color: #0a0a0a;
+    font-weight: normal;
+    padding-left: 0.5rem;
+    vertical-align: 50%;
+}
+
+/* Space out buttons in the title bar */
+div.top-bar-right ul.menu li {
+    padding-left: 0.25rem;
+}
+
+/* Centre text in title part of bar */
+div.top-bar-title {
+    padding-top: 0.5rem;
+    font-weight: bold;
+}

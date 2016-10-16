@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the login/logout facility.
+# This file contains the implementation of the login/signout facility.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -26,7 +26,7 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use Webperl::Utils qw(path_join is_defined_numeric);
-use v5.12;
+use v5.14;
 
 # ============================================================================
 #  Emailer functions
@@ -226,7 +226,7 @@ sub validate_login {
                                                                             "formattest" => '^[-\w]+$',
                                                                             "formatdesc" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSERCHAR")});
     # Bomb out at this point if the username is not valid.
-    return ($self -> {"template"} -> load_template("login/error.tem", {"***reason***" => $error}), $args)
+    return ($self -> {"template"} -> load_template("login/error.tem", {"%(reason)s" => $error}), $args)
         if($error);
 
     # Do the same with the password...
@@ -234,7 +234,7 @@ sub validate_login {
                                                                             "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_PASSWORD"),
                                                                             "minlen"     => 2,
                                                                             "maxlen"     => 255});
-    return ($self -> {"template"} -> load_template("login/error.tem", {"***reason***" => $error}), $args)
+    return ($self -> {"template"} -> load_template("login/error.tem", {"%(reason)s" => $error}), $args)
         if($error);
 
     # Username and password appear to be present and contain sane characters. Try to log the user in...
@@ -250,8 +250,8 @@ sub validate_login {
         } else {
             # Otherwise, send back the 'account needs activating' error
             return ($self -> {"template"} -> load_template("login/error.tem",
-                                                           {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_INACTIVE",
-                                                                                                                       { "***url-resend***" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]) })
+                                                           {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_INACTIVE",
+                                                                                                                     { "***url-resend***" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]) })
                                                            }), $args);
         }
     }
@@ -297,10 +297,7 @@ sub validate_login {
     }
 
     # limiting not supported, or username is bunk - return the failure message as-is
-    return ($self -> {"template"} -> load_template("login/error.tem",
-                                                   {
-                                                    "***reason***" => $failmsg
-                                                   }), $args);
+    return ($self -> {"template"} -> load_template("login/error.tem", { "%(reason)" => $failmsg }), $args);
 }
 
 
@@ -705,28 +702,21 @@ sub generate_login_form {
     my $args  = shift;
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"***message***" => $error})
+    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"%(message)s" => $error})
         if($error);
 
-    # Persist length is always in seconds, so convert it to something more readable
-    my $persist_length = $self -> {"template"} -> humanise_seconds($self -> {"session"} -> {"auth"} -> get_config("max_autologin_time"));
-
-    # if self-registration is enabled, turn on the option
-    my $self_register = $self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"} ?
-                        $self -> {"template"} -> load_template("login/selfreg.tem") :
-                        $self -> {"template"} -> load_template("login/no_selfreg.tem");
+    my $persist = $self -> {"settings"} -> {"config"} -> {"Auth:allow_autologin"} ?
+        $self -> {"template"} -> load_template("login/persist_enabled.tem") :
+        $self -> {"template"} -> load_template("login/persist_disabled.tem");
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-            $self -> {"template"} -> load_template("login/form.tem", {"***error***"       => $error,
-                                                                      "***persistlen***"  => $persist_length,
-                                                                      "***selfreg***"     => $self_register,
-                                                                      "***url-actform***" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
-                                                                      "***url-recform***" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]),
-                                                                      "***target***"      => $self -> build_url("block" => "login"),
-                                                                      "***question***"    => $self -> {"settings"} -> {"config"} -> {"Login:self_register_question"},
-                                                                      "***username***"    => $args -> {"username"},
-                                                                      "***regname***"     => $args -> {"regname"},
-                                                                      "***email***"       => $args -> {"email"}}));
+            $self -> {"template"} -> load_template("login/form.tem", {"%(error)s"      => $error,
+                                                                      "%(persist)s"    => $persist,
+                                                                      "%(url-forgot)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]),
+                                                                      "%(target)s"     => $self -> build_url("block" => "login"),
+                                                                      "%(username)s"   => $args -> {"username"}}),
+            $self -> {"template"} -> load_template("login/extrahead.tem"),
+            $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
 
 
@@ -846,22 +836,27 @@ sub generate_loggedin {
     # If any warnings were encountered, send back a different logged-in page to avoid
     # confusing users.
     if(!$warning) {
-        # Note that, while it would be nice to immediately redirect users at this point,
-        $content = $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"),
-                                                        "security",
-                                                        $self -> {"template"} -> replace_langvar("LOGIN_SUMMARY"),
-                                                        $self -> {"template"} -> replace_langvar("LOGIN_LONGDESC", {"***url***" => $url}),
-                                                        undef,
-                                                        "logincore",
-                                                        [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                                           "colour"  => "blue",
-                                                           "action"  => "location.href='$url'"} ]);
-        $extrahead = $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $url});
+        # Do a redirect to the return URL. This bypasses problems with double-post, and
+        # avoids the need for an interstitial. There is ambiguity about whether 302/303
+        # responses should contain cookies, but all major browsers support doing this
+        # (see, eg http://blog.dubbelboer.com/2012/11/25/302-cookie.html )
+        print $self -> {"cgi"} -> redirect( -url     => $url,
+                                            -charset => 'utf-8',
+                                            -cookie  => $self -> {"session"} -> session_cookies());
+        # Prevent circular references from messing up shutdown
+        $self -> {"template"} -> set_module_obj(undef);
+        $self -> {"messages"} -> set_module_obj(undef);
+        $self -> {"system"} -> clear() if($self -> {"system"});
+        $self -> {"appuser"} -> set_system(undef) if($self -> {"appuser"});
+
+        $self -> {"dbh"} -> disconnect();
+        $self -> {"logger"} -> end_log();
+        exit;
 
     # Users who have encountered warnings during login always get a login confirmation page, as it has
     # to show them the warning message box.
     } else {
-        my $message = $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"),
+        my $message = $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"),
                                                            "security",
                                                            $self -> {"template"} -> replace_langvar("LOGIN_SUMMARY"),
                                                            $self -> {"template"} -> replace_langvar("LOGIN_NOREDIRECT", {"***url***" => $url,
@@ -882,12 +877,12 @@ sub generate_loggedin {
 }
 
 
-## @method private @ generate_loggedout()
+## @method private @ generate_signedout()
 # Generate the contents of a page telling the user that they have successfully logged out.
 #
 # @return An array of three values: the page title string, the 'logged out' message, and
 #         a meta element to insert into the head element to redirect the user.
-sub generate_loggedout {
+sub generate_signedout {
     my $self = shift;
 
     # NOTE: This is called **after** the session is deleted, so savestate will be undef. This
@@ -896,7 +891,7 @@ sub generate_loggedout {
 
     # return the title, content, and extraheader
     return ($self -> {"template"} -> replace_langvar("LOGOUT_TITLE"),
-            $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGOUT_TITLE"),
+            $self -> message_box($self -> {"template"} -> replace_langvar("LOGOUT_TITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGOUT_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGOUT_LONGDESC", {"***url***" => $url}),
@@ -921,7 +916,7 @@ sub generate_activated {
                                     pathinfo => []);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_ACT_DONETITLE"),
-            $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_ACT_DONETITLE"),
+            $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_ACT_DONETITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGIN_ACT_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGIN_ACT_LONGDESC",
@@ -946,7 +941,7 @@ sub generate_registered {
                                  pathinfo => [ "activate" ]);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_REG_DONETITLE"),
-            $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_REG_DONETITLE"),
+            $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_REG_DONETITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGIN_REG_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGIN_REG_LONGDESC"),
@@ -969,7 +964,7 @@ sub generate_resent {
     my $url = $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_RESEND_DONETITLE"),
-            $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESEND_DONETITLE"),
+            $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESEND_DONETITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGIN_RESEND_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGIN_RESEND_LONGDESC"),
@@ -992,7 +987,7 @@ sub generate_recover {
     my $url = $self -> build_url("block" => "login", "pathinfo" => []);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_RECOVER_DONETITLE"),
-            $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RECOVER_DONETITLE"),
+            $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RECOVER_DONETITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGIN_RECOVER_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGIN_RECOVER_LONGDESC"),
@@ -1018,7 +1013,7 @@ sub generate_reset {
 
     if(!$error) {
         return ($self -> {"template"} -> replace_langvar("LOGIN_RESET_DONETITLE"),
-                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESET_DONETITLE"),
+                $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESET_DONETITLE"),
                                                      "security",
                                                      $self -> {"template"} -> replace_langvar("LOGIN_RESET_SUMMARY"),
                                                      $self -> {"template"} -> replace_langvar("LOGIN_RESET_LONGDESC"),
@@ -1029,7 +1024,7 @@ sub generate_reset {
                                                         "action"  => "location.href='$url'"} ]));
     } else {
         return ($self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRTITLE"),
-                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRTITLE"),
+                $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRTITLE"),
                                                      "error",
                                                      $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRSUMMARY"),
                                                      $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRDESC", {"***reason***" => $error}),
@@ -1092,61 +1087,156 @@ sub _build_login_response {
 # ============================================================================
 #  Interface functions
 
-## @method $ page_display()
-# Generate the page content for this module.
-sub page_display {
+sub _handle_signout {
     my $self = shift;
 
-    # Is this an API call, or a normal page operation?
-    my $apiop = $self -> is_api_operation();
-    if(defined($apiop)) {
-        # API call - dispatch to appropriate handler.
-        given($apiop) {
-            when("check")     { return $self -> api_response     ($self -> _build_login_check_response()); }
-            when("loginform") { return $self -> api_html_response($self -> _build_loginform_response()); }
-            when("login")     { return $self -> api_response     ($self -> _build_login_response()); }
+    # User must be logged in to log out
+    return $self -> _generate_not_loggedin()
+        if($self -> {"session"} -> anonymous_session());
 
-            default {
-                return $self -> api_response($self -> api_errorhash('bad_op',
-                                                                    $self -> {"template"} -> replace_langvar("API_BAD_OP")))
-            }
-        }
+    # User is logged in, do the signout
+    $self -> log("signout", $self -> {"session"} -> get_session_userid());
+    if($self -> {"session"} -> delete_session()) {
+        return $self -> _generate_signedout();
     } else {
-        # We need to determine what the page title should be, and the content to shove in it...
-        my ($title, $body, $extrahead) = ("", "", "");
-        my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
+        return $self -> _generate_fatal($SessionHandler::errstr);
+    }
+}
+
+
+sub _handle_activate {
+    my $self = shift;
+
+    # Does the get/post data include an activation code? If so, check it
+    if(defined($self -> {"cgi"} -> param("actcode"))) {
+        my ($user, $args) = $self -> _validate_actcode();
+        if(!ref($user)) {
+            $self -> log("activation error", $user);
+            return $self -> _generate_actcode_form($user);
+        } else {
+            $self -> log("activation success", $user -> {"username"});
+            return $self -> _generate_activated($user);
+        }
+    }
+
+    # Otherwise, just return the activation form
+    return $self -> _generate_actcode_form();
+}
+
+
+sub _handle_recover {
+    my $self = shift;
+
+    if(defined($self -> {"cgi"} -> param("dorecover"))) {
+        my ($user, $args) = $self -> _validate_recover();
+        if(!ref($user)) {
+            $self -> log("Reset error", $user);
+            return $self -> _generate_recover_form($user);
+        } else {
+            $self -> log("Reset success", $user -> {"username"});
+            return $self -> _generate_recover($user);
+        }
+    }
+
+    return $self -> _generate_recover_form();
+}
+
+
+sub _handle_resend {
+    my $self = shift;
+
+    if(defined($self -> {"cgi"} -> param("doresend"))) {
+        my ($user, $args) = $self -> _validate_resend();
+        if(!ref($user)) {
+            $self -> log("Resend error", $user);
+            return $self -> _generate_resend_form($user);
+        } else {
+            $self -> log("Resend success", $user -> {"username"});
+            return $self -> _generate_resent($user);
+        }
+    }
+
+    return $self -> _generate_resend_form();
+}
+
+
+sub _handle_signup {
+    my $self = shift;
+
+    if(defined($self -> {"cgi"} -> param("signup"))) {
+        # Validate/perform the registration
+        my ($user, $args) = $self -> _validate_signup();
+
+        # Do we have any errors? If so, send back the login form with them
+        if(!ref($user)) {
+            $self -> log("registration error", $user);
+            return $self -> _generate_signup_form($user, $args);
+
+            # No errors, user is registered
+        } else {
+            # Do not create a new session - the user needs to confirm the account.
+            $self -> log("registered inactive", $user -> {"username"});
+            return $self -> _generate_signedup();
+        }
+    }
+
+    return $self -> _generate_signup_form();
+}
+
+
+sub _handle_changepass {
+    my $self = shift;
+
+    if(defined($self -> {"cgi"} -> param("changepass"))) {
+        # Check the password is valid
+        my ($user, $args) = $self -> validate_passchange();
+
+        # Change failed, send back the change form
+        if(!ref($user)) {
+            $self -> log("passchange error", $user);
+            return $self -> _generate_passchange_form($user);
+
+            # Change done, send back the loggedin page
+        } else {
+            $self -> log("password updated", $user);
+            return $self -> _generate_loggedin();
+        }
+    }
+
+    return $self -> _generate_passchange_form();
+}
+
+
+sub _dispatch_ui {
+    my $self = shift;
+
+    # We need to determine what the page title should be, and the content to shove in it...
+    my ($title, $body, $extrahead, $extrajs) = ("", "", "", "");
+    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
+
+    given($pathinfo[0]) {
+        when("signup")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signup();     }
+        when("signout")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signout();    }
+        when("activate")   { ($title, $body, $extrahead, $extrajs) = $self -> _handle_activate();   }
+        when("recover")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_recover();    }
+        when("resend")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_resend();     }
+        when("passchange") { ($title, $body, $extrahead, $extrajs) = $self -> _handle_passchange(); }
+
+        default {
+            ($title, $body, $extrahead, $extrajs) = $self -> generate_login_form();
+        }
+    }
+
+    # Done generating the page content, return the filled in page template
+    return $self -> generate_orb_page($title, $body, $extrahead, $extrajs, 'login');
+}
+
 
         # User is attempting to do a password change
-        if(defined($self -> {"cgi"} -> param("changepass"))) {
-
-            # Check the password is valid
-            my ($user, $args) = $self -> validate_passchange();
-
-            # Change failed, send back the change form
-            if(!ref($user)) {
-                $self -> log("passchange error", $user);
-                ($title, $body) = $self -> generate_passchange_form($user);
-
-                # Change done, send back the loggedin page
-            } else {
-                $self -> log("password updated", $user);
-                ($title, $body, $extrahead) = $self -> generate_loggedin();
-            }
 
             # If the user is not anonymous, they have logged in already.
-        } elsif(!$self -> {"session"} -> anonymous_session()) {
+        } elsif(!) {
 
-            # Is the user requesting a logout? If so, doo eet.
-            if(defined($self -> {"cgi"} -> param("logout")) || ($pathinfo[0] && $pathinfo[0] eq "logout")) {
-                $self -> log("logout", $self -> {"session"} -> get_session_userid());
-                if($self -> {"session"} -> delete_session()) {
-                    ($title, $body, $extrahead) = $self -> generate_loggedout();
-                } else {
-                    return $self -> generate_fatal($SessionHandler::errstr);
-                }
-
-                # Already logged in, check password and either force a change or tell the user they logged in.
-            } else {
                 my $user = $self -> {"session"} -> get_user_byid();
 
                 if($user) {
@@ -1159,7 +1249,7 @@ sub page_display {
                         ($title, $body, $extrahead) = $self -> generate_loggedin();
                     } else {
                         $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-                        ($title, $body) = $self -> generate_passchange_form();
+                        ($title, $body, $extrahead, $extrajs) = $self -> generate_passchange_form();
                     }
                 } else {
                     $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Logged in session with no user record. This Should Not Happen.");
@@ -1167,7 +1257,7 @@ sub page_display {
             }
 
             # User is anonymous - do we have a login?
-        } elsif(defined($self -> {"cgi"} -> param("login"))) {
+        } elsif(defined($self -> {"cgi"} -> param("signin"))) {
 
             # Validate the other fields...
             my ($user, $args) = $self -> validate_login();
@@ -1175,7 +1265,7 @@ sub page_display {
             # Do we have any errors? If so, send back the login form with them
             if(!ref($user)) {
                 $self -> log("login error", $user);
-                ($title, $body) = $self -> generate_login_form($user, $args);
+                ($title, $body, $extrahead, $extrajs) = $self -> generate_login_form($user, $args);
 
                 # No errors, user is valid...
             } else {
@@ -1202,87 +1292,49 @@ sub page_display {
                     ($title, $body, $extrahead) = $self -> generate_loggedin();
                 } else {
                     $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-                    ($title, $body) = $self -> generate_passchange_form();
+                    ($title, $body, $extrahead, $extrajs) = $self -> generate_passchange_form();
                 }
             }
 
             # Has a registration attempt been made?
-        } elsif(defined($self -> {"cgi"} -> param("register"))) {
-
-            # Validate/perform the registration
-            my ($user, $args) = $self -> validate_register();
-
-            # Do we have any errors? If so, send back the login form with them
-            if(!ref($user)) {
-                $self -> log("registration error", $user);
-                ($title, $body) = $self -> generate_login_form($user, $args);
-
-                # No errors, user is registered
-            } else {
-                # Do not create a new session - the user needs to confirm the account.
-                $self -> log("registered inactive", $user -> {"username"});
-                ($title, $body) = $self -> generate_registered();
-            }
-
-            # Is the user attempting activation?
-        } elsif(defined($self -> {"cgi"} -> param("actcode"))) {
-
-            my ($user, $args) = $self -> validate_actcode();
-            if(!ref($user)) {
-                $self -> log("activation error", $user);
-                ($title, $body) = $self -> generate_actcode_form($user);
-            } else {
-                $self -> log("activation success", $user -> {"username"});
-                ($title, $body) = $self -> generate_activated($user);
-            }
-
-            # Password reset requested?
-        } elsif(defined($self -> {"cgi"} -> param("dorecover"))) {
-
-            my ($user, $args) = $self -> validate_recover();
-            if(!ref($user)) {
-                $self -> log("Reset error", $user);
-                ($title, $body) = $self -> generate_recover_form($user);
-            } else {
-                $self -> log("Reset success", $user -> {"username"});
-                ($title, $body) = $self -> generate_recover($user);
-            }
+        } els
 
         } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
 
             my ($user, $args) = $self -> validate_reset();
-            ($title, $body) = $self -> generate_reset(!ref($user) ? $user : undef);
+            ($title, $body, $extrahead, $extrajs) = $self -> generate_reset(!ref($user) ? $user : undef);
             # User wants a resend?
-        } elsif(defined($self -> {"cgi"} -> param("doresend"))) {
-
-            my ($user, $args) = $self -> validate_resend();
-            if(!ref($user)) {
-                $self -> log("Resend error", $user);
-                ($title, $body) = $self -> generate_resend_form($user);
-            } else {
-                $self -> log("Resend success", $user -> {"username"});
-                ($title, $body) = $self -> generate_resent($user);
-            }
+        } els
 
 
-        } elsif(defined($self -> {"cgi"} -> param("activate")) || ($pathinfo[0] && $pathinfo[0] eq "activate")) {
-            ($title, $body) = $self -> generate_actcode_form();
-
-        } elsif(defined($self -> {"cgi"} -> param("recover")) || ($pathinfo[0] && $pathinfo[0] eq "recover")) {
-            ($title, $body) = $self -> generate_recover_form();
-
-        } elsif(defined($self -> {"cgi"} -> param("resend")) || ($pathinfo[0] && $pathinfo[0] eq "resend")) {
-            ($title, $body) = $self -> generate_resend_form();
 
             # No session, no submission? Send back the login form...
-        } else {
-            ($title, $body) = $self -> generate_login_form();
         }
 
-        # Done generating the page content, return the filled in page template
-        return $self -> {"template"} -> load_template("login/page.tem", {"***title***"     => $title,
-                                                                         "***extrahead***" => $extrahead,
-                                                                         "***content***"   => $body,});
+}
+
+
+## @method $ page_display()
+# Generate the page content for this module.
+sub page_display {
+    my $self = shift;
+
+    # Is this an API call, or a normal page operation?
+    my $apiop = $self -> is_api_operation();
+    if(defined($apiop)) {
+        # API call - dispatch to appropriate handler.
+        given($apiop) {
+            when("check")     { return $self -> api_response     ($self -> _build_login_check_response()); }
+            when("loginform") { return $self -> api_html_response($self -> _build_loginform_response()); }
+            when("login")     { return $self -> api_response     ($self -> _build_login_response()); }
+
+            default {
+                return $self -> api_response($self -> api_errorhash('bad_op',
+                                                                    $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+            }
+        }
+    } else {
+        return $self -> _dispatch_ui();
     }
 }
 

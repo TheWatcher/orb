@@ -1,0 +1,15 @@
+            <div class="small-8 small-centered columns">
+                <!-- Start messagebox core -->
+                <div class="messagebox callout %(boxclass)s">
+                    <h2>%(title)s</h2>
+                    <div class="mbcontent">
+                        <div class="mcore">
+                            <div class="msummary">%(summary)s</div>
+                            <div class="mtext">%(longdesc)s</div>
+                        </div>
+%(additional)s
+%(buttons)s
+                    </div>
+                </div>
+                <!-- End messagebox core -->
+            </div>
