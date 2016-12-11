@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the login/signout facility.
+# This file contains the implementation of the signin/signout facility.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -31,7 +31,7 @@ use v5.14;
 # ============================================================================
 #  Emailer functions
 
-## @method $ register_email($user, $password)
+## @method private $ _signup_email($user, $password)
 # Send a registration welcome message to the specified user. This send an email
 # to the user including their username, password, and a link to the activation
 # page for their account.
@@ -39,7 +39,7 @@ use v5.14;
 # @param user     A reference to a user record hash.
 # @param password The unencrypted version of the password set for the user.
 # @return undef on success, otherwise an error message.
-sub register_email {
+sub _signup_email {
     my $self     = shift;
     my $user     = shift;
     my $password = shift;
@@ -47,19 +47,19 @@ sub register_email {
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
-                                     "pathinfo" => [],
+                                     "pathinfo" => [ "activate" ],
                                      "params"   => "actcode=".$user -> {"act_code"});
     my $actform = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
                                      "pathinfo" => [ "activate" ]);
 
     my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_REG_SUBJECT"),
-                                                         message => $self -> {"template"} -> load_template("login/email_registered.tem",
-                                                                                                           {"***username***" => $user -> {"username"},
-                                                                                                            "***password***" => $password,
-                                                                                                            "***act_code***" => $user -> {"act_code"},
-                                                                                                            "***act_url***"  => $acturl,
-                                                                                                            "***act_form***" => $actform,
+                                                         message => $self -> {"template"} -> load_template("login/email_signuped.tem",
+                                                                                                           {"%(username)s" => $user -> {"username"},
+                                                                                                            "%(password)s" => $password,
+                                                                                                            "%(act_code)s" => $user -> {"act_code"},
+                                                                                                            "%(act_url)s"  => $acturl,
+                                                                                                            "%(act_form)s" => $actform,
                                                                                                            }),
                                                          recipients       => [ $user -> {"user_id"} ],
                                                          send_immediately => 1);
@@ -67,7 +67,7 @@ sub register_email {
 }
 
 
-## @method $ lockout_email($user, $password, $actcode, $faillimit)
+## @method private $ _lockout_email($user, $password, $actcode, $faillimit)
 # Send a message to a user informing them that their account has been locked, and
 # they need to reactivate it.
 #
@@ -76,7 +76,7 @@ sub register_email {
 # @param actcode   The activation code set for the account.
 # @param faillimit The number of login failures the user can have.
 # @return undef on success, otherwise an error message.
-sub lockout_email {
+sub _lockout_email {
     my $self      = shift;
     my $user      = shift;
     my $password  = shift;
@@ -86,7 +86,7 @@ sub lockout_email {
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
-                                     "pathinfo" => [],
+                                     "pathinfo" => [ "activate" ],
                                      "params"   => "actcode=".$actcode);
     my $actform = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
@@ -94,12 +94,12 @@ sub lockout_email {
 
     my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_LOCKOUT_SUBJECT"),
                                                          message => $self -> {"template"} -> load_template("login/email_lockout.tem",
-                                                                                                           {"***username***"  => $user -> {"username"},
-                                                                                                            "***password***"  => $password,
-                                                                                                            "***act_code***"  => $actcode,
-                                                                                                            "***act_url***"   => $acturl,
-                                                                                                            "***act_form***"  => $actform,
-                                                                                                            "***faillimit***" => $faillimit,
+                                                                                                           {"%(username)s"  => $user -> {"username"},
+                                                                                                            "%(password)s"  => $password,
+                                                                                                            "%(act_code)s"  => $actcode,
+                                                                                                            "%(act_url)s"   => $acturl,
+                                                                                                            "%(act_form)s"  => $actform,
+                                                                                                            "%(faillimit)s" => $faillimit,
                                                                                                            }),
                                                          recipients       => [ $user -> {"user_id"} ],
                                                          send_immediately => 1);
@@ -107,13 +107,13 @@ sub lockout_email {
 }
 
 
-## @method $ resend_act_email($user, $password)
+## @method private $ _resend_act_email($user, $password)
 # Send another copy of the user's activation code to their email address.
 #
 # @param user     A reference to a user record hash.
 # @param password The unencrypted version of the password set for the user.
 # @return undef on success, otherwise an error message.
-sub resend_act_email {
+sub _resend_act_email {
     my $self     = shift;
     my $user     = shift;
     my $password = shift;
@@ -121,7 +121,7 @@ sub resend_act_email {
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
-                                     "pathinfo" => [],
+                                     "pathinfo" => [ "activate" ],
                                      "params"   => "actcode=".$user -> {"act_code"});
     my $actform = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
@@ -129,11 +129,11 @@ sub resend_act_email {
 
     my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_RESEND_SUBJECT"),
                                                         message => $self -> {"template"} -> load_template("login/email_actcode.tem",
-                                                                                                          {"***username***" => $user -> {"username"},
-                                                                                                           "***password***" => $password,
-                                                                                                           "***act_code***" => $user -> {"act_code"},
-                                                                                                           "***act_url***"  => $acturl,
-                                                                                                           "***act_form***" => $actform,
+                                                                                                          {"%(username)s" => $user -> {"username"},
+                                                                                                           "%(password)s" => $password,
+                                                                                                           "%(act_code)s" => $user -> {"act_code"},
+                                                                                                           "%(act_url)s"  => $acturl,
+                                                                                                           "%(act_form)s" => $actform,
                                                                                                           }),
                                                          recipients       => [ $user -> {"user_id"} ],
                                                          send_immediately => 1);
@@ -141,13 +141,13 @@ sub resend_act_email {
 }
 
 
-## @method $ recover_email$user, $actcode)
+## @method private $ _recover_email$user, $actcode)
 # Send a copy of the user's username and new actcode to their email address.
 #
 # @param user     A reference to a user record hash.
 # @param actcode The unencrypted version of the actcode set for the user.
 # @return undef on success, otherwise an error message.
-sub recover_email {
+sub _recover_email {
     my $self    = shift;
     my $user    = shift;
     my $actcode = shift;
@@ -158,12 +158,12 @@ sub recover_email {
                                       "params"   => { "uid"       => $user -> {"user_id"},
                                                       "resetcode" => $actcode},
                                       "joinstr"  => "&",
-                                      "pathinfo" => []);
+                                      "pathinfo" => [ "recover" ]);
 
     my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_RECOVER_SUBJECT"),
                                                         message => $self -> {"template"} -> load_template("login/email_recover.tem",
-                                                                                                          {"***username***"  => $user -> {"username"},
-                                                                                                           "***reset_url***" => $reseturl,
+                                                                                                          {"%(username)s"  => $user -> {"username"},
+                                                                                                           "%(reset_url)s" => $reseturl,
                                                                                                           }),
                                                         recipients       => [ $user -> {"user_id"} ],
                                                         send_immediately => 1);
@@ -171,13 +171,13 @@ sub recover_email {
 }
 
 
-## @method $ reset_email($user, $password)
+## @method private $ _reset_email($user, $password)
 # Send the user's username and random reset password to them
 #
 # @param user     A reference to a user record hash.
 # @param password The unencrypted version of the password set for the user.
 # @return undef on success, otherwise an error message.
-sub reset_email {
+sub _reset_email {
     my $self     = shift;
     my $user     = shift;
     my $password = shift;
@@ -189,9 +189,9 @@ sub reset_email {
 
     my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_RESET_SUBJECT"),
                                                         message => $self -> {"template"} -> load_template("login/email_reset.tem",
-                                                                                                           {"***username***"  => $user -> {"username"},
-                                                                                                            "***password***"  => $password,
-                                                                                                            "***login_url***" => $loginform,
+                                                                                                           {"%(username)s"  => $user -> {"username"},
+                                                                                                            "%(password)s"  => $password,
+                                                                                                            "%(login_url)s" => $loginform,
                                                                                                            }),
                                                         recipients       => [ $user -> {"user_id"} ],
                                                         send_immediately => 1);
@@ -213,7 +213,7 @@ sub reset_email {
 # @return An array of two values: A reference to the user's data on success,
 #         or an error string if the login failed, and a reference to a hash of
 #         arguments that passed validation.
-sub validate_login {
+sub _validate_login {
     my $self   = shift;
     my $error  = "";
     my $args   = {};
@@ -226,7 +226,8 @@ sub validate_login {
                                                                             "formattest" => '^[-\w]+$',
                                                                             "formatdesc" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSERCHAR")});
     # Bomb out at this point if the username is not valid.
-    return ($self -> {"template"} -> load_template("login/error.tem", {"%(reason)s" => $error}), $args)
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_MESSAGE}",
+                                                                       "%(reason)s"  => $error}), $args)
         if($error);
 
     # Do the same with the password...
@@ -234,7 +235,8 @@ sub validate_login {
                                                                             "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_PASSWORD"),
                                                                             "minlen"     => 2,
                                                                             "maxlen"     => 255});
-    return ($self -> {"template"} -> load_template("login/error.tem", {"%(reason)s" => $error}), $args)
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_MESSAGE}",
+                                                                       "%(reason)s"  => $error}), $args)
         if($error);
 
     # Username and password appear to be present and contain sane characters. Try to log the user in...
@@ -249,9 +251,9 @@ sub validate_login {
 
         } else {
             # Otherwise, send back the 'account needs activating' error
-            return ($self -> {"template"} -> load_template("login/error.tem",
-                                                           {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_INACTIVE",
-                                                                                                                     { "***url-resend***" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]) })
+            return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_MESSAGE}",
+                                                                               "%(reason)s"  => $self -> {"template"} -> replace_langvar("LOGIN_ERR_INACTIVE",
+                                                                                                                                         { "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]) })
                                                            }), $args);
         }
     }
@@ -268,11 +270,11 @@ sub validate_login {
         if($failcount <= $limit) {
             # Yes, return a fail message, potentially with a failure limit warning
             return ($self -> {"template"} -> load_template("login/failed.tem",
-                                                           {"***reason***"      => $failmsg,
-                                                            "***failcount***"   => $failcount,
-                                                            "***faillimit***"   => $limit,
-                                                            "***failremain***"  => $limit - $failcount,
-                                                            "***url-recover***" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ])
+                                                           {"%(reason)s"      => $failmsg,
+                                                            "%(failcount)s"   => $failcount,
+                                                            "%(faillimit)s"   => $limit,
+                                                            "%(failremain)s"  => $limit - $failcount,
+                                                            "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ])
                                                            }), $args);
 
         # User has exceeded failure limit but their account is still active, deactivate
@@ -287,17 +289,17 @@ sub validate_login {
                 $self -> lockout_email($user, $newpass, $actcode, $limit);
 
                 return ($self -> {"template"} -> load_template("login/lockedout.tem",
-                                                           {"***reason***"     => $failmsg,
-                                                            "***failcount***"  => $failcount,
-                                                            "***faillimit***"  => $limit,
-                                                            "***failremain***" => $limit - $failcount
-                                                           }), $args);
+                                                               {"%(reason)s"     => $failmsg,
+                                                                "%(failcount)s"  => $failcount,
+                                                                "%(faillimit)s"  => $limit,
+                                                                "%(failremain)s" => $limit - $failcount
+                                                               }), $args);
             }
         }
     }
 
     # limiting not supported, or username is bunk - return the failure message as-is
-    return ($self -> {"template"} -> load_template("login/error.tem", { "%(reason)" => $failmsg }), $args);
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(reason)" => $failmsg }), $args);
 }
 
 
@@ -309,7 +311,7 @@ sub validate_login {
 # @return An array of two values: A reference to the user's data on success,
 #         or an error string if the change failed, and a reference to a hash of
 #         arguments that passed validation.
-sub validate_passchange {
+sub _validate_passchange {
     my $self   = shift;
     my $error  = "";
     my $errors = "";
@@ -318,16 +320,16 @@ sub validate_passchange {
     # Need to get a logged-in user before anything else is done
     my $user = $self -> {"session"} -> get_user_byid();
     return ($self -> {"template"} -> load_template("login/passchange_errors.tem",
-                                                   {"***errors***" => $self -> {"template"} -> load_template("login/passchange_error.tem",
-                                                                                                             {"***error***" => "{L_LOGIN_PASSCHANGE_ERRNOUSER}"})
+                                                   {"%(errors)s" => $self -> {"template"} -> load_template("login/passchange_error.tem",
+                                                                                                             {"%(error)s" => "{L_LOGIN_PASSCHANGE_ERRNOUSER}"})
                                                    }), $args)
         if($self -> {"session"} -> anonymous_session() || !$user);
 
     # Double-check that the user's authmethod actually /allows/ password changes
     my $auth_passchange = $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "passchange");
     return ($self -> {"template"} -> load_template("login/passchange_errors.tem",
-                                                   {"***errors***" => $self -> {"template"} -> load_template("login/passchange_error.tem",
-                                                                                                             {"***error***" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "passchange_message")})
+                                                   {"%(errors)s" => $self -> {"template"} -> load_template("login/passchange_error.tem",
+                                                                                                             {"%(error)s" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "passchange_message")})
                                                    }), $args)
         if(!$auth_passchange);
 
@@ -336,33 +338,33 @@ sub validate_passchange {
                                                                           "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_NEWPASSWORD"),
                                                                           "minlen"     => 2,
                                                                           "maxlen"     => 255});
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => $error})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => $error})
         if($error);
 
     ($args -> {"confirm"}, $error) = $self -> validate_string("confirm", {"required"   => 1,
                                                                           "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_CONFPASS"),
                                                                           "minlen"     => 2,
                                                                           "maxlen"     => 255});
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => $error})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => $error})
         if($error);
 
     # New and confirm must match
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => "{L_LOGIN_PASSCHANGE_ERRMATCH}"})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => "{L_LOGIN_PASSCHANGE_ERRMATCH}"})
         unless($args -> {"newpass"} eq $args -> {"confirm"});
 
     ($args -> {"oldpass"}, $error) = $self -> validate_string("oldpass", {"required"   => 1,
                                                                           "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_OLDPASS"),
                                                                           "minlen"     => 2,
                                                                           "maxlen"     => 255});
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => $error})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => $error})
         if($error);
 
     # New and old must not match
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => "{L_LOGIN_PASSCHANGE_ERRSAME}"})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => "{L_LOGIN_PASSCHANGE_ERRSAME}"})
         if($args -> {"newpass"} eq $args -> {"oldpass"});
 
     # Check that the old password is actually valid
-    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***" => "{L_LOGIN_PASSCHANGE_ERRVALID}"})
+    $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s" => "{L_LOGIN_PASSCHANGE_ERRVALID}"})
         unless($self -> {"session"} -> {"auth"} -> valid_user($user -> {"username"}, $args -> {"oldpass"}));
 
     # Now apply policy if needed
@@ -371,21 +373,21 @@ sub validate_passchange {
     if($policy_fails) {
         foreach my $name (@{$policy_fails -> {"policy_order"}}) {
             next if(!$policy_fails -> {$name});
-            $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"***error***"   => "{L_LOGIN_".uc($name)."ERR}",
-                                                                                             "***set***"     => $policy_fails -> {$name} -> [1],
-                                                                                             "***require***" => $policy_fails -> {$name} -> [0] });
+            $errors .= $self -> {"template"} -> load_template("login/passchange_error.tem", {"%(error)s"   => "{L_LOGIN_".uc($name)."ERR}",
+                                                                                             "%(set)s"     => $policy_fails -> {$name} -> [1],
+                                                                                             "%(require)s" => $policy_fails -> {$name} -> [0] });
         }
     }
 
     # Any errors accumulated up to this point mean that changes don't happen...
-    return ($self -> {"template"} -> load_template("login/passchange_errors.tem", {"***errors***" => $errors}), $args)
+    return ($self -> {"template"} -> load_template("login/passchange_errors.tem", {"%(errors)s" => $errors}), $args)
         if($errors);
 
     # Password is good, change it
     $self -> {"session"} -> {"auth"} -> set_password($user -> {"username"}, $args -> {"newpass"})
         or return ($self -> {"template"} -> load_template("login/passchange_errors.tem",
-                                                          {"***errors***" => $self -> {"template"} -> load_template("login/passchange_error.tem",
-                                                                                                                    {"***error***" => $self -> {"session"} -> {"auth"} -> errstr()})
+                                                          {"%(errors)s" => $self -> {"template"} -> load_template("login/passchange_error.tem",
+                                                                                                                    {"%(error)s" => $self -> {"session"} -> {"auth"} -> errstr()})
                                                           }), $args);
 
     # No need to keep the passchange variable now
@@ -395,19 +397,20 @@ sub validate_passchange {
 }
 
 
-## @method private @ validate_register()
+## @method private @ _validate_signup()
 # Determine whether the username, email, and security question provided by the user
 # are valid. If they are, return true.
 #
-# @return The new user's record on success, an error string if the register failed.
-sub validate_register {
+# @return The new user's record on success, an error string if the signup failed.
+sub _validate_signup {
     my $self   = shift;
     my $error  = "";
     my $errors = "";
     my $args   = {};
 
     # User attempted self-register when it is disabled? Naughty user, no cookie!
-    return ($self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_NOSELFREG")}), $args)
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                       "%(reason)s"  => "{L_LOGIN_ERR_NOSELFREG}"}), $args)
         unless($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"});
 
     # Check that the username is provided and valid
@@ -420,13 +423,14 @@ sub validate_register {
                                                               });
     # Is the username valid?
     if($error) {
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $error});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
     } else {
         # Is the username in use?
         my $user = $self -> {"session"} -> get_user($args -> {"regname"});
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem",
-                                                          {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_USERINUSE",
-                                                                                                                      { "***url-recover***" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
+        $errors .= $self -> {"template"} -> load_template("error/error.tem",
+                                                          { "%(message)s" => "{L_LOGIN_ERR_REGFAILED}"
+                                                            "%(reason)s"  => $self -> {"template"} -> replace_langvar("LOGIN_ERR_USERINUSE",
+                                                                                                                      { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
                                                           })
             if($user);
     }
@@ -438,55 +442,45 @@ sub validate_register {
                                                                       "maxlen"     => 256
                                                             });
     if($error) {
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $error});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
     } else {
 
         # Check that the address is structured in a vaguely valid way
         # Yes, this is not fully RFC compliant, but frankly going down that road invites a
         # level of utter madness that would make Azathoth himself utter "I say, steady on now..."
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")})
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")})
             if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
 
         # Is the email address in use?
         my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_EMAILINUSE",
-                                                                                                                                             { "***url-recover***" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_EMAILINUSE",
+                                                                                                                                            { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
                                                           })
             if($user);
     }
 
-    # Did the user get the 'Are you a human' question right?
-    ($args -> {"answer"}, $error) = $self -> validate_string("answer", {"required"   => 1,
-                                                                        "nicename"   => $self -> {"template"} -> replace_langvar("LOGIN_SECURITY"),
-                                                                        "minlen"     => 2,
-                                                                        "maxlen"     => 255,
-                                                             });
-    if($error) {
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $error});
-    } else {
-        $errors .= $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADSECURE")})
-            unless(lc($args -> {"answer"}) eq lc($self -> {"settings"} -> {"config"} -> {"Login:self_register_answer"}));
-    }
+    # FIXME: Validate the recaptcha code here.
+
 
     # Halt here if there are any problems.
-    return ($self -> {"template"} -> load_template("login/reg_errorlist.tem", {"***errors***" => $errors}), $args)
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                            "%(errors)s" => $errors}), $args)
         if($errors);
 
     # Get here an the user's details are okay, register the new user.
     my $methodimpl = $self -> {"session"} -> {"auth"} -> get_authmethod_module($self -> {"settings"} -> {"config"} -> {"default_authmethod"})
-        or return ($self -> {"template"} -> load_template("login/reg_errorlist.tem",
-                                                          {"***errors***" => $self -> {"template"} -> load_template("login/reg_error.tem",
-                                                                                                                    {"***reason***" => $self -> {"session"} -> {"auth"} -> errstr()}) }),
+        or return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                              "%(reason)s"  => $self -> {"session"} -> {"auth"} -> errstr() }),
                    $args);
 
     my ($user, $password) = $methodimpl -> create_user($args -> {"regname"}, $self -> {"settings"} -> {"config"} -> {"default_authmethod"}, $args -> {"email"});
-    return ($self -> {"template"} -> load_template("login/reg_errorlist.tem",
-                                                   {"***errors***" => $self -> {"template"} -> load_template("login/reg_error.tem", {"***reason***" => $methodimpl -> errstr()}) }),
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                       "%(reason)s"  => $methodimpl -> errstr() }),
             $args)
         if(!$user);
 
     # Send registration email
-    my $err = $self -> register_email($user, $password);
+    my $err = $self -> signup_email($user, $password);
     return ($err, $args) if($err);
 
     # User is registered...
@@ -500,7 +494,7 @@ sub validate_register {
 # @return An array of two values: the first is a reference to the activated
 #         user's data hash on success, an error message otherwise; the
 #         second is the args parsed from the activation data.
-sub validate_actcode {
+sub _validate_actcode {
     my $self = shift;
     my $args = {};
     my $error;
@@ -513,7 +507,7 @@ sub validate_actcode {
                                                                           "formattest" => '^[a-zA-Z0-9]+$',
                                                                           "formatdesc" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADACTCHAR")});
     # Bomb out at this point if the code is not valid.
-    return $self -> {"template"} -> load_template("login/act_error.tem", {"***reason***" => $error})
+    return $self -> {"template"} -> load_template("login/act_error.tem", {"%(reason)s" => $error})
         if($error);
 
     # Act code is valid, can a user be activated?
@@ -521,7 +515,7 @@ sub validate_actcode {
     # we don't actually know which user is being activated until the actcode lookup is done. And generally, if
     # an act code has been set, the authmethod supports activation anyway!
     my $user = $self -> {"session"} -> {"auth"} -> activate_user($args -> {"actcode"});
-    return ($self -> {"template"} -> load_template("login/act_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADCODE")}), $args)
+    return ($self -> {"template"} -> load_template("login/act_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADCODE")}), $args)
         unless($user);
 
     # User is active
@@ -537,7 +531,7 @@ sub validate_actcode {
 # @return Two values: a reference to the user whose activation code has been send
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
-sub validate_resend {
+sub _validate_resend {
     my $self   = shift;
     my $args   = {};
     my $error;
@@ -548,29 +542,29 @@ sub validate_resend {
                                                                       "minlen"     => 2,
                                                                       "maxlen"     => 256
                                                             });
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $error}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $error}), $args)
         if($error);
 
     # Does the email look remotely valid?
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")}), $args)
         if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
 
     # Does the address correspond to an actual user?
     my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSER")}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSER")}), $args)
         if(!$user);
 
     # Does the user's authmethod support activation anyway?
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate_message")}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate_message")}), $args)
         if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate"));
 
     # no point in resending an activation code to an active account
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_ALREADYACT")}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_ALREADYACT")}), $args)
         if($self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
 
     my $newpass;
     ($newpass, $user -> {"act_code"}) = $self -> {"session"} -> {"auth"} -> reset_password_actcode($user -> {"username"});
-    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"***reason***" => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
+    return ($self -> {"template"} -> load_template("login/resend_error.tem", {"%(reason)s" => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
         if(!$newpass);
 
     # Get here and the user's account isn't active, needs to be activated, and can be emailed a code...
@@ -587,7 +581,7 @@ sub validate_resend {
 # @return Two values: a reference to the user whose reset code has been send
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
-sub validate_recover {
+sub _validate_recover {
     my $self   = shift;
     my $args   = {};
     my $error;
@@ -598,29 +592,29 @@ sub validate_recover {
                                                                       "minlen"     => 2,
                                                                       "maxlen"     => 256
                                                             });
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $error}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $error}), $args)
         if($error);
 
     # Does the email look remotely valid?
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADEMAIL")}), $args)
         if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
 
     # Does the address correspond to an actual user?
     my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSER")}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_BADUSER")}), $args)
         if(!$user);
 
     # Users can not recover an inactive account - they need to get a new act code
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_NORECINACT")}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_NORECINACT")}), $args)
         if($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate") &&
            !$self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
 
     # Does the user's authmethod support activation anyway?
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message")}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message")}), $args)
         if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover"));
 
     my $newcode = $self -> {"session"} -> {"auth"} -> generate_actcode($user -> {"username"});
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
         if(!$newcode);
 
     # Get here and the user's account has been reset
@@ -638,7 +632,7 @@ sub validate_recover {
 # @return Two values: a reference to the user whose password has been reset
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
-sub validate_reset {
+sub _validate_reset {
     my $self = shift;
     my $args   = {};
     my $error;
@@ -676,7 +670,7 @@ sub validate_reset {
     # Okay, user is valid, authcode checks out, auth module supports resets, generate a new
     # password and send it
     my $newpass  = $self -> {"session"} -> {"auth"} -> reset_password($user -> {"username"});
-    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"***reason***" => $self -> {"session"} -> {"auth"} -> errstr()}), $args)
+    return ($self -> {"template"} -> load_template("login/recover_error.tem", {"%(reason)s" => $self -> {"session"} -> {"auth"} -> errstr()}), $args)
         if(!$newpass);
 
     # Get here and the user's account has been reset
@@ -689,20 +683,20 @@ sub validate_reset {
 # ============================================================================
 #  Form generators
 
-## @method private $ generate_login_form($error, $args)
+## @method private $ generate_signin_form($error, $args)
 # Generate the content of the login form.
 #
 # @param error A string containing errors related to logging in, or undef.
 # @param args  A reference to a hash of intiial values.
 # @return An array of two values: the page title, and a string containing
 #         the login form.
-sub generate_login_form {
+sub _generate_signin_form {
     my $self  = shift;
     my $error = shift;
     my $args  = shift;
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"%(message)s" => $error})
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
     my $persist = $self -> {"settings"} -> {"config"} -> {"Auth:allow_autologin"} ?
@@ -720,13 +714,41 @@ sub generate_login_form {
 }
 
 
+## @method private $ generate_signup_form($error, $args)
+# Generate the content of the registration form.
+#
+# @param error A string containing errors related to signing up, or undef.
+# @param args  A reference to a hash of intiial values.
+# @return An array of two values: the page title, and a string containing
+#         the registration form.
+sub _generate_signup_form {
+    my $self  = shift;
+    my $error = shift;
+    my $args  = shift;
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
+        if($error);
+
+    return ($self -> {"template"} -> replace_langvar("LOGIN_REGISTER_TITLE"),
+            $self -> {"template"} -> load_template("login/register.tem", {"%(error)s"        => $error,
+                                                                          "%(persist)s"      => $persist,
+                                                                          "%(url-activate)s" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
+                                                                          "%(target)s"       => $self -> build_url("block" => "login", "pathinfo" => [ "signup" ]),
+                                                                          "%(username)s"     => $args -> {"username"},
+                                                                          "%(email)s"        => $args -> {"email"}}),
+            $self -> {"template"} -> load_template("login/extrahead.tem"),
+            $self -> {"template"} -> load_template("login/extrajs.tem"));
+}
+
+
 ## @method private @ generate_passchange_form($error)
 # Generate a form through which the user can change their password, used to
 # support forced password changes.
 #
 # @param error  A string containing errors related to password changes, or undef.
 # @return An array of two values: the page title string, the code form
-sub generate_passchange_form {
+sub _generate_passchange_form {
     my $self    = shift;
     my $error   = shift;
     my $reasons = { 'temporary' => "{L_LOGIN_FORCECHANGE_TEMP}",
@@ -742,15 +764,15 @@ sub generate_passchange_form {
     $reason = 'temporary' unless($reason && $reasons -> {$reason});
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"***message***" => $error})
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-            $self -> {"template"} -> load_template("login/force_password.tem", {"***error***"  => $error,
-                                                                                "***target***" => $self -> build_url("block" => "login"),
-                                                                                "***policy***" => $policy,
-                                                                                "***reason***" => $reasons -> {$reason},
-                                                                                "***rid***"    => $reason } ));
+            $self -> {"template"} -> load_template("login/force_password.tem", {"%(error)s"  => $error,
+                                                                                "%(target)s" => $self -> build_url("block" => "login"),
+                                                                                "%(policy)s" => $policy,
+                                                                                "%(reason)s" => $reasons -> {$reason},
+                                                                                "%(rid)s"    => $reason } ));
 }
 
 
@@ -760,18 +782,18 @@ sub generate_passchange_form {
 #
 # @param error A string containing errors related to activating, or undef.
 # @return An array of two values: the page title string, the code form
-sub generate_actcode_form {
+sub _generate_actcode_form {
     my $self  = shift;
     my $error = shift;
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"***message***" => $error})
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-            $self -> {"template"} -> load_template("login/act_form.tem", {"***error***"      => $error,
-                                                                          "***target***"     => $self -> build_url("block" => "login"),
-                                                                          "***url-resend***" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}));
+            $self -> {"template"} -> load_template("login/act_form.tem", {"%(error)s"      => $error,
+                                                                          "%(target)s"     => $self -> build_url("block" => "login"),
+                                                                          "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}));
 }
 
 
@@ -780,17 +802,17 @@ sub generate_actcode_form {
 #
 # @param error A string containing errors related to recovery, or undef.
 # @return An array of two values: the page title string, the code form
-sub generate_recover_form {
+sub _generate_recover_form {
     my $self  = shift;
     my $error = shift;
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"***message***" => $error})
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-            $self -> {"template"} -> load_template("login/recover_form.tem", {"***error***"  => $error,
-                                                                              "***target***" => $self -> build_url("block" => "login")}));
+            $self -> {"template"} -> load_template("login/recover_form.tem", {"%(error)s"  => $error,
+                                                                              "%(target)s" => $self -> build_url("block" => "login")}));
 }
 
 
@@ -799,17 +821,17 @@ sub generate_recover_form {
 #
 # @param error A string containing errors related to resending, or undef.
 # @return An array of two values: the page title string, the code form
-sub generate_resend_form {
+sub _generate_resend_form {
     my $self  = shift;
     my $error = shift;
 
     # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("login/error_box.tem", {"***message***" => $error})
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
     return ($self -> {"template"} -> replace_langvar("LOGIN_TITLE"),
-            $self -> {"template"} -> load_template("login/resend_form.tem", {"***error***"  => $error,
-                                                                             "***target***" => $self -> build_url("block" => "login")}));
+            $self -> {"template"} -> load_template("login/resend_form.tem", {"%(error)s"  => $error,
+                                                                             "%(target)s" => $self -> build_url("block" => "login")}));
 }
 
 
@@ -821,17 +843,16 @@ sub generate_resend_form {
 #
 # @return An array of three values: the page title string, the 'logged in' message, and
 #         a meta element to insert into the head element to redirect the user.
-sub generate_loggedin {
+sub _generate_loggedin {
     my $self = shift;
+    my $content;
 
+    # determine where the user was trying to get to before the login process
     my $url = $self -> build_return_url();
-    my $warning = "";
 
     # The user validation might have thrown up warning, so check that.
-    $warning = $self -> {"template"} -> load_template("login/warning_box.tem", {"***message***" => $self -> {"session"} -> auth_error()})
+    my $warning = $self -> {"template"} -> load_template("login/warning_box.tem", {"%(message)s" => $self -> {"session"} -> auth_error()})
         if($self -> {"session"} -> auth_error());
-
-    my ($content, $extrahead);
 
     # If any warnings were encountered, send back a different logged-in page to avoid
     # confusing users.
@@ -859,21 +880,19 @@ sub generate_loggedin {
         my $message = $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"),
                                                            "security",
                                                            $self -> {"template"} -> replace_langvar("LOGIN_SUMMARY"),
-                                                           $self -> {"template"} -> replace_langvar("LOGIN_NOREDIRECT", {"***url***" => $url,
-                                                                                                                         "***supportaddr***" => ""}),
+                                                           $self -> {"template"} -> replace_langvar("LOGIN_NOREDIRECT", {"%(url)s" => $url,
+                                                                                                                         "%(supportaddr)s" => ""}),
                                                            undef,
                                                            "logincore",
                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                               "colour"  => "blue",
                                                               "action"  => "location.href='$url'"} ]);
-        $content = $self -> {"template"} -> load_template("login/login_warn.tem", {"***message***" => $message,
-                                                                                   "***warning***" => $warning});
+        $content = $self -> {"template"} -> load_template("login/login_warn.tem", {"%(message)s" => $message,
+                                                                                   "%(warning)s" => $warning});
     }
 
     # return the title, content, and extraheader. If the warning is set, do not include an autoredirect.
-    return ($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"),
-            $content,
-            $extrahead);
+    return ($self -> {"template"} -> replace_langvar("LOGIN_DONETITLE"), $content);
 }
 
 
@@ -882,7 +901,7 @@ sub generate_loggedin {
 #
 # @return An array of three values: the page title string, the 'logged out' message, and
 #         a meta element to insert into the head element to redirect the user.
-sub generate_signedout {
+sub _generate_signedout {
     my $self = shift;
 
     # NOTE: This is called **after** the session is deleted, so savestate will be undef. This
@@ -894,13 +913,13 @@ sub generate_signedout {
             $self -> message_box($self -> {"template"} -> replace_langvar("LOGOUT_TITLE"),
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGOUT_SUMMARY"),
-                                                 $self -> {"template"} -> replace_langvar("LOGOUT_LONGDESC", {"***url***" => $url}),
+                                                 $self -> {"template"} -> replace_langvar("LOGOUT_LONGDESC", {"%(url)s" => $url}),
                                                  undef,
                                                  "logincore",
                                                  [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                     "colour"  => "blue",
                                                     "action"  => "location.href='$url'"} ]),
-            $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $url}));
+            $self -> {"template"} -> load_template("refreshmeta.tem", {"%(url)s" => $url}));
 }
 
 
@@ -909,7 +928,7 @@ sub generate_signedout {
 # their account.
 #
 # @return An array of two values: the page title string, the 'activated' message.
-sub generate_activated {
+sub _generate_activated {
     my $self = shift;
 
     my $target = $self -> build_url(block    => "login",
@@ -920,7 +939,7 @@ sub generate_activated {
                                                  "security",
                                                  $self -> {"template"} -> replace_langvar("LOGIN_ACT_SUMMARY"),
                                                  $self -> {"template"} -> replace_langvar("LOGIN_ACT_LONGDESC",
-                                                                                          {"***url-login***" => $self -> build_url("block" => "login")}),
+                                                                                          {"%(url-login)s" => $self -> build_url("block" => "login")}),
                                                  undef,
                                                  "logincore",
                                                         [ {"message" => $self -> {"template"} -> replace_langvar("LOGIN_LOGIN"),
@@ -929,12 +948,12 @@ sub generate_activated {
 }
 
 
-## @method private @ generate_registered()
+## @method private @ generate_signedup()
 # Generate the contents of a page telling the user that they have successfully created an
 # inactive account.
 #
 # @return An array of two values: the page title string, the 'registered' message.
-sub generate_registered {
+sub _generate_signedup {
     my $self = shift;
 
     my $url = $self -> build_url(block    => "login",
@@ -958,7 +977,7 @@ sub generate_registered {
 # sent to their email address.
 #
 # @return An array of two values: the page title string, the 'resent' message.
-sub generate_resent {
+sub _generate_resent {
     my $self = shift;
 
     my $url = $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]);
@@ -981,7 +1000,7 @@ sub generate_resent {
 # sent to their email address.
 #
 # @return An array of two values: the page title string, the 'recover sent' message.
-sub generate_recover {
+sub _generate_recover {
     my $self = shift;
 
     my $url = $self -> build_url("block" => "login", "pathinfo" => []);
@@ -1005,7 +1024,7 @@ sub generate_recover {
 #
 # @param  error If set, display an error message rather than a 'completed' message.
 # @return An array of two values: the page title string, the 'resent' message.
-sub generate_reset {
+sub _generate_reset {
     my $self  = shift;
     my $error = shift;
 
@@ -1027,7 +1046,7 @@ sub generate_reset {
                 $self -> message_box($self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRTITLE"),
                                                      "error",
                                                      $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRSUMMARY"),
-                                                     $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRDESC", {"***reason***" => $error}),
+                                                     $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRDESC", {"%(reason)s" => $error}),
                                                      undef,
                                                      "logincore",
                                                      [ {"message" => $self -> {"template"} -> replace_langvar("LOGIN_LOGIN"),
@@ -1063,6 +1082,10 @@ sub _build_loginform_response {
 }
 
 
+## @method private $ _build_login_response(void)
+# Genereate a hash containing the API response to a login request.
+#
+# @return The data to send back to the user in an API reponse.
 sub _build_login_response {
     my $self = shift;
 
@@ -1086,6 +1109,36 @@ sub _build_login_response {
 
 # ============================================================================
 #  Interface functions
+
+sub _handle_signup {
+    my $self = shift;
+
+    # Logged in user can't sign up again
+    return $self -> _handle_default()
+        unless($self -> {"session"} -> anonymous_session());
+
+    # Has the user submitted the signup form?
+    if(defined($self -> {"cgi"} -> param("signup"))) {
+        # Validate/perform the registration
+        my ($user, $args) = $self -> _validate_signup();
+
+        # Do we have any errors? If so, send back the login form with them
+        if(!ref($user)) {
+            $self -> log("registration error", $user);
+            return $self -> _generate_signup_form($user, $args);
+
+        # No errors, user is registered
+        } else {
+            # Do not create a new session - the user needs to confirm the account.
+            $self -> log("registered inactive", $user -> {"username"});
+            return $self -> _generate_signedup();
+        }
+    }
+
+    # No submission, send back the signup form
+    return $self -> _generate_signup_form();
+}
+
 
 sub _handle_signout {
     my $self = shift;
@@ -1160,35 +1213,11 @@ sub _handle_resend {
 }
 
 
-sub _handle_signup {
-    my $self = shift;
-
-    if(defined($self -> {"cgi"} -> param("signup"))) {
-        # Validate/perform the registration
-        my ($user, $args) = $self -> _validate_signup();
-
-        # Do we have any errors? If so, send back the login form with them
-        if(!ref($user)) {
-            $self -> log("registration error", $user);
-            return $self -> _generate_signup_form($user, $args);
-
-            # No errors, user is registered
-        } else {
-            # Do not create a new session - the user needs to confirm the account.
-            $self -> log("registered inactive", $user -> {"username"});
-            return $self -> _generate_signedup();
-        }
-    }
-
-    return $self -> _generate_signup_form();
-}
-
-
-sub _handle_changepass {
+sub _handle_passchange {
     my $self = shift;
 
     if(defined($self -> {"cgi"} -> param("changepass"))) {
-        # Check the password is valid
+        # Check the password is valid-
         my ($user, $args) = $self -> validate_passchange();
 
         # Change failed, send back the change form
@@ -1207,6 +1236,72 @@ sub _handle_changepass {
 }
 
 
+sub _handle_default {
+    my $self = shift;
+
+    # Is there already a logged-in session?
+    my $user = $self -> {"session"} -> get_user_byid();
+
+    # Pick up logged-in sessions, and either generate the password change form,
+    # or to the logged-in page
+    if($user) {
+        # Does the user need to change their password?
+        my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
+        if(!$passchange) {
+            $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
+
+            # No passchange needed, user is good
+            return $self -> _generate_loggedin();
+        } else {
+            $self -> {"session"} -> set_variable("passchange_reason", $passchange);
+            return $self -> _generate_passchange_form();
+        }
+
+    # User is anonymous - do we have a login?
+    } elsif(defined($self -> {"cgi"} -> param("signin"))) {
+        my ($user, $args) = $self -> validate_login();
+
+        # Do we have any errors? If so, send back the login form with them
+        if(!ref($user)) {
+            $self -> log("login error", $user);
+            return $self -> _generate_signin_form($user, $args);
+
+            # No errors, user is valid...
+        } else {
+            # should the login be made persistent?
+            my $persist = defined($self -> {"cgi"} -> param("persist")) &&
+                          $self -> {"cgi"} -> param("persist") &&
+                          $self -> {"settings"} -> {"config"} -> {"Auth:allow_autologin"};
+
+            # Get the session variables so they can be copied to the new session.
+            my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
+
+            # create the new logged-in session, copying over the savestate session variable
+            $self -> {"session"} -> create_session($user -> {"user_id"},
+                                                   $persist,
+                                                   {"saved_block"    => $block,
+                                                    "saved_pathinfo" => $pathinfo,
+                                                    "saved_api"      => $api,
+                                                    "saved_qstring"  => $qstring});
+
+            $self -> log("login", $user -> {"username"});
+
+            # Does the user need to change their password?
+            my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($args -> {"username"});
+            if(!$passchange) {
+                # No passchange needed, user is good
+                return $self -> _generate_loggedin();
+            } else {
+                $self -> {"session"} -> set_variable("passchange_reason", $passchange);
+                return $self -> _generate_passchange_form();
+            }
+        }
+    }
+
+    return $self -> _generate_signin_form();
+}
+
+
 sub _dispatch_ui {
     my $self = shift;
 
@@ -1217,101 +1312,23 @@ sub _dispatch_ui {
     given($pathinfo[0]) {
         when("signup")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signup();     }
         when("signout")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signout();    }
+
         when("activate")   { ($title, $body, $extrahead, $extrajs) = $self -> _handle_activate();   }
         when("recover")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_recover();    }
         when("resend")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_resend();     }
+        when("reset")      { ($title, $body, $extrahead, $extrajs) = $self -> _handle_reset();     }
         when("passchange") { ($title, $body, $extrahead, $extrajs) = $self -> _handle_passchange(); }
-
-        default {
-            ($title, $body, $extrahead, $extrajs) = $self -> generate_login_form();
-        }
+        default            { ($title, $body, $extrahead, $extrajs) = $self -> _handle_default();    }
     }
 
     # Done generating the page content, return the filled in page template
     return $self -> generate_orb_page($title, $body, $extrahead, $extrajs, 'login');
 }
 
-
-        # User is attempting to do a password change
-
-            # If the user is not anonymous, they have logged in already.
-        } elsif(!) {
-
-                my $user = $self -> {"session"} -> get_user_byid();
-
-                if($user) {
-                    # Does the user need to change their password?
-                    my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
-                    if(!$passchange) {
-                        $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
-
-                        # No passchange needed, user is good
-                        ($title, $body, $extrahead) = $self -> generate_loggedin();
-                    } else {
-                        $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-                        ($title, $body, $extrahead, $extrajs) = $self -> generate_passchange_form();
-                    }
-                } else {
-                    $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Logged in session with no user record. This Should Not Happen.");
-                }
-            }
-
-            # User is anonymous - do we have a login?
-        } elsif(defined($self -> {"cgi"} -> param("signin"))) {
-
-            # Validate the other fields...
-            my ($user, $args) = $self -> validate_login();
-
-            # Do we have any errors? If so, send back the login form with them
-            if(!ref($user)) {
-                $self -> log("login error", $user);
-                ($title, $body, $extrahead, $extrajs) = $self -> generate_login_form($user, $args);
-
-                # No errors, user is valid...
-            } else {
-                # should the login be made persistent?
-                my $persist = defined($self -> {"cgi"} -> param("persist")) && $self -> {"cgi"} -> param("persist");
-
-                # Get the session variables so they can be copied to the new session.
-                my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
-
-                # create the new logged-in session, copying over the savestate session variable
-                $self -> {"session"} -> create_session($user -> {"user_id"},
-                                                       $persist,
-                                                       {"saved_block"    => $block,
-                                                        "saved_pathinfo" => $pathinfo,
-                                                        "saved_api"      => $api,
-                                                        "saved_qstring"  => $qstring});
-
-                $self -> log("login", $user -> {"username"});
-
-                # Does the user need to change their password?
-                my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($args -> {"username"});
-                if(!$passchange) {
-                    # No passchange needed, user is good
-                    ($title, $body, $extrahead) = $self -> generate_loggedin();
-                } else {
-                    $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-                    ($title, $body, $extrahead, $extrajs) = $self -> generate_passchange_form();
-                }
-            }
-
-            # Has a registration attempt been made?
-        } els
-
         } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
 
             my ($user, $args) = $self -> validate_reset();
             ($title, $body, $extrahead, $extrajs) = $self -> generate_reset(!ref($user) ? $user : undef);
-            # User wants a resend?
-        } els
-
-
-
-            # No session, no submission? Send back the login form...
-        }
-
-}
 
 
 ## @method $ page_display()
