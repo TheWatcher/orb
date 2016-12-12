@@ -383,6 +383,30 @@ sub api_html_response {
 }
 
 
+## @method private $ _api_status($data)
+# Based on the specified data hash, determine which HTTP status code
+# to use in the response.
+#
+# @param data A reference to a hash containing the data that will be sent to
+#             the client.
+# @return A HTTP status string, including code and message.
+sub _api_status {
+    my $self = shift;
+    my $data = shift;
+
+    return "200 OK"
+        unless(ref($data) eq "HASH" && $data -> {"error"} && $data -> {"error"} -> {"code"});
+
+    given($data -> {"error"} -> {"code"}) {
+        when("bad_request")      { return "400 Bad Request"; }
+        when("not_found")        { return "404 Not Found"; }
+        when("permission_error") { return "403 Forbidden"; }
+        when("general_error")    { return "532 Lilliputian snotweasel foxtrot omegaforce"; }
+        default { return "500 Internal Server Error"; }
+    }
+}
+
+
 ## @method private void _xml_api_response($data, %xmlopts)
 # Print out the specified data as a XML response.
 #
@@ -409,8 +433,14 @@ sub _xml_api_response {
                                                                                   "%(error)s" => "Error encoding XML response: $@"})
         if($@);
 
+    my $status = $self -> _api_status($data);
     print $self -> {"cgi"} -> header(-type => 'application/xml',
+                                     -status  => $status
                                      -charset => 'utf-8');
+    if($ENV{MOD_PERL} && $status ne "200 OK") {
+        $self -> {"cgi"} -> r -> rflush();
+        $self -> {"cgi"} -> r -> status(200);
+    }
     print Encode::encode_utf8($xmldata);
 }
 
@@ -424,8 +454,14 @@ sub _json_api_response {
     my $data = shift;
 
     my $json = JSON -> new();
+    my $status = $self -> _api_status($data);
     print $self -> {"cgi"} -> header(-type => 'application/json',
+                                     -status  => $status,
                                      -charset => 'utf-8');
+    if($ENV{MOD_PERL} && $status ne "200 OK") {
+        $self -> {"cgi"} -> r -> rflush();
+        $self -> {"cgi"} -> r -> status(200);
+    }
     print Encode::encode_utf8($json -> pretty -> convert_blessed(1) -> encode($data));
 }
 
@@ -493,7 +529,11 @@ sub api_token_login {
     return undef unless($key);
 
     my ($checkkey) = $key =~ /^(\w+)$/;
-    return undef unless($checkkey && length($checkkey) == $self -> {"api_auth_keylen"});
+    return undef unless($checkkey);
+
+    my $sha256 = Digest -> new('SHA-256');
+    $sha256 -> add($checkkey);
+    my $crypt = $sha256 -> hexdigest();
 
     my $keyrec = $self -> {"dbh"} -> prepare("SELECT `user_id`
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"apikeys"}."`
@@ -501,7 +541,7 @@ sub api_token_login {
                                               AND `active` = 1
                                               ORDER BY `created` DESC
                                               LIMIT 1");
-    $keyrec -> execute($checkkey)
+    $keyrec -> execute($crypt)
         or return $self -> self_error("Unable to look up api key: ".$self -> {"dbh"} -> errstr());
 
     my $keydata = $keyrec -> fetchrow_hashref()
@@ -525,7 +565,7 @@ sub api_token_login {
 sub api_token_generate {
     my $self   = shift;
     my $userid = shift;
-    my $token  = '';
+    my ($token, $crypt) = ('', '');
 
     $self -> clear_error();
 
@@ -537,7 +577,11 @@ sub api_token_generate {
     do {
         $token = join("", map { ("a".."z", "A".."Z", 0..9)[rand 62] } 1..$self -> {"api_auth_keylen"});
 
-        $checkh -> execute($token)
+        my $sha256 = Digest -> new('SHA-256');
+        $sha256 -> add($token);
+        $crypt = $sha256 -> hexdigest();
+
+        $checkh -> execute($crypt)
             or return $self -> self_error("Unable to look up api token: ".$self -> {"dbh"} -> errstr());
 
     } while($checkh -> fetchrow_hashref());
@@ -554,9 +598,9 @@ sub api_token_generate {
                                             (`user_id`, `token`, `created`)
                                             VALUES(?, ?, UNIX_TIMESTAMP())");
 
-    my $row = $newh -> execute($userid, $token);
-    return $self -> self_error("Unable to store token '$token' for user '$userid': ".$self -> {"dbh"} -> errstr) if(!$row);
-    return $self -> self_error("Insert failed for token '$token' for user '$userid': no rows inserted") if($row eq "0E0");
+    my $row = $newh -> execute($userid, $crypt);
+    return $self -> self_error("Unable to store token for user '$userid': ".$self -> {"dbh"} -> errstr) if(!$row);
+    return $self -> self_error("Insert failed for token for user '$userid': no rows inserted") if($row eq "0E0");
 
     return $token;
 }
@@ -591,14 +635,15 @@ sub set_saved_state {
 
     $self -> clear_error();
 
-    my $res = $self -> {"session"} -> set_variable("saved_block", $self -> {"cgi"} -> param("block"));
+    my $block = $self -> {"cgi"} -> param("block");
+    my $res = $self -> {"session"} -> set_variable("saved_block", $block);
     return undef unless(defined($res));
 
-    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
     $res = $self -> {"session"} -> set_variable("saved_pathinfo", join("/", @pathinfo));
     return undef unless(defined($res));
 
-    my @api = $self -> {"cgi"} -> param("api");
+    my @api = $self -> {"cgi"} -> multi_param("api");
     $res = $self -> {"session"} -> set_variable("saved_api", join("/", @api));
     return undef unless(defined($res));
 
@@ -718,6 +763,7 @@ sub build_return_url {
 #              copies of the parameter are added to the query string, one for each
 #              value in the array.
 # * forcessl - If true, the URL is forced to https: rather than http:
+# * anchor   - Optional anchor name to append to the URL after #
 #
 # @param args A hash of arguments to use when building the URL.
 # @return A string containing the URL.
@@ -766,6 +812,8 @@ sub build_url {
     $url =~ s/^http:/https:/
         if($args{"forcessl"} && $url =~ /^http:/);
 
+    $url .= "#".$args{"anchor"} if($args{"anchor"});
+
     return $url;
 }
 
@@ -797,6 +845,5 @@ sub get_documentation_url {
     my $url = $urlh -> fetchrow_arrayref();
     return $url ? $url -> [0] : undef;
 }
-
 
 1;
