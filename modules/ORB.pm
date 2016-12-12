@@ -77,33 +77,59 @@ sub new {
 # ============================================================================
 #  HTML generation support
 
-## @method $ generate_orb_page($title, $content, $extrahead, $extrajs, $doclink)
+## @method void redirect($url)
+# Redirect the user to the specified url.
+#
+# @param url The URL to send the user to.
+sub redirect {
+    my $self = shift;
+    my $url  = shift;
+
+    # There is ambiguity about whether 302/303 responses should contain cookies,
+    # but all major browsers support doing this as of at least 2012 - see
+    #  http://blog.dubbelboer.com/2012/11/25/302-cookie.html
+    print $self -> {"cgi"} -> redirect( -url     => $url,
+                                        -charset => 'utf-8',
+                                        -cookie  => $self -> {"session"} -> session_cookies());
+
+    # Prevent circular references from messing up shutdown
+    $self -> {"template"} -> set_module_obj(undef) if($self -> {"template"});
+    $self -> {"messages"} -> set_module_obj(undef) if($self -> {"messages"});
+    $self -> {"system"} -> clear() if($self -> {"system"});
+    $self -> {"appuser"} -> set_system(undef) if($self -> {"appuser"});
+
+    $self -> {"dbh"} -> disconnect() if($self -> {"dbh"});
+    $self -> {"logger"} -> end_log() if($self -> {"logger"});
+    exit;
+}
+
+
+## @method $ generate_orb_page(%args)
 # A convenience function to wrap page content in the standard page template. This
 # function allows blocks to embed their content in a page without having to build
 # the whole page including "common" items themselves. It should be called to wrap
-# the content when the block's page_display is returning.
+# the content when the block's page_display is returning. Supported arguments are:
 #
-# @param title     The page title.
-# @param content   The content to show in the page.
-# @param extrahead Any extra directives to place in the header.
-# @param doclink   The name of a document link to include in the userbar. If not
-#                  supplied, no link is shown.
+# - `title`:     The page title.
+# - `content`:   The content to show in the page.
+# - `leftmenu`:  Optional content to show in a left popup menu.
+# - `extrahead`: Any extra directives to place in the header.
+# - `extrajs`:   Any extra javascript to place in the footer.
+# - `doclink`:   The name of a document link to include in the userbar. If not
+#                supplied, no link is shown.
 # @return A string containing the page.
 sub generate_orb_page {
-    my $self      = shift;
-    my $title     = shift;
-    my $content   = shift;
-    my $extrahead = shift;
-    my $extrajs   = shift;
-    my $doclink   = shift;
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
     my $userbar = $self -> {"module"} -> load_module("ORB::Userbar");
 
-    return $self -> {"template"} -> load_template("page.tem", {"%(extrahead)s" => $extrahead || "",
-                                                               "%(extrajs)s"   => $extrajs || "",
-                                                               "%(title)s"     => $title || "",
-                                                               "%(userbar)s"   => ($userbar ? $userbar -> block_display($title, $self -> {"block"}, $doclink) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
-                                                               "%(content)s"   => $content});
+    return $self -> {"template"} -> load_template("page.tem", {"%(extrahead)s" => $args -> {"extrahead"} // "",
+                                                               "%(extrajs)s"   => $args -> {"extrajs"} // "",
+                                                               "%(title)s"     => $args -> {"title"} // "",
+                                                               "%(leftmenu)s"  => $args -> {"leftmenu"} // "",
+                                                               "%(userbar)s"   => ($userbar ? $userbar -> block_display($args -> {"title"}, $args -> {"leftmenu"}, $self -> {"block"}, $args -> {"doclink"}) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                               "%(content)s"   => $args -> {"content"}});
 }
 
 
@@ -177,52 +203,6 @@ sub generate_multiselect {
     }
 
     return $result;
-}
-
-
-## @method $ message_box($title, $type, $summary, $longdesc, $additional, $boxclass, $buttons)
-# Create a message box block to include in a page. This generates a templated
-# message box to include in a page. It assumes the presence of messagebox.tem
-# in the template directory, containing markers for a title, type, summary,
-# long description and additional data. The type argument should correspond
-# to an image in the {template}/images/messages/ directory without an extension.
-#
-# @param title      The title of the message box.
-# @param type       The message type.
-# @param summary    A summary version of the message.
-# @param longdesc   The full message body
-# @param additional Any additional content to include in the message box.
-# @param boxclass   Optional additional classes to add to the messagebox container.
-# @param buttons    Optional reference to an array of hashes containing button data. Each
-#                   hash in the array should contain three keys: `colour` which specifies
-#                   the button colour; `action` which should contain javascript to run
-#                   when the button is clicked; and `message` which should be the message
-#                   to show in the button.
-# @return A string containing the message box.
-sub message_box {
-    my ($self, $title, $type, $summary, $longdesc, $additional, $boxclass, $buttons) = @_;
-    my $buttonbar = "";
-
-    # Has the caller specified any buttons?
-    if($buttons) {
-        # Build the list of buttons...
-        my $buttonlist = "";
-        for my $button (@{$buttons}) {
-            $buttonlist .= $self -> {"template"} -> load_template("messagebox_button.tem", {"%(colour)s"  => $button -> {"colour"},
-                                                                                            "%(onclick)s" => $button -> {"action"},
-                                                                                            "%(message)s" => $button -> {"message"}});
-        }
-        # Shove into the bar
-        $buttonbar = $self -> {"template"} -> load_template("messagebox_buttonbar.tem", {"%(buttons)s" => $buttonlist});
-    }
-
-    return $self -> {"template"} -> load_template("messagebox.tem", { "%(title)s"      => $title,
-                                                                      "%(icon)s"       => $type,
-                                                                      "%(summary)s"    => $summary,
-                                                                      "%(longdesc)s"   => $longdesc,
-                                                                      "%(additional)s" => $additional,
-                                                                      "%(buttons)s"    => $buttonbar,
-                                                                      "%(boxclass)s"   => $boxclass});
 }
 
 
