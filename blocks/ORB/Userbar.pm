@@ -58,37 +58,30 @@ sub block_display {
                                       params   => {});
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($import, $userprofile, $docs) =
-        ($self -> {"template"} -> load_template("userbar/import_disabled.tem"),
-         $self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"***url-login***" => $loginurl}),
-         $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
+    my ($userprofile) =
+        ($self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"%(url-login)s" => $loginurl}),
         );
-
-    # Is documentation available?
-    my $url = $self -> get_documentation_url($doclink);
-    $docs = $self -> {"template"} -> load_template("userbar/doclink_enabled.tem", {"***url-doclink***" => $url})
-        if($url);
 
     # Is the user logged in?
     if(!$self -> {"session"} -> anonymous_session()) {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $import  = $self -> {"template"} -> load_template("userbar/import_enabled.tem"  , {"***url-import***" => $self -> build_url(block => "import", pathinfo => [])})
+        $import  = $self -> {"template"} -> load_template("userbar/import_enabled.tem"  , {"%(url-import)s" => $self -> build_url(block => "import", pathinfo => [])})
             if($self -> check_permission("import") && $current ne "import");
 
         # User is logged in, so actually reflect their current options and state
-        $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
-                                                                                               "***username***"    => $user -> {"username"},
-                                                                                               "***gravhash***"    => $user -> {"gravatar_hash"},
-                                                                                               "***url-logout***"  => $self -> build_url(block => "login"  , pathinfo => ["logout"])});
+        $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"%(realname)s"    => $user -> {"fullname"},
+                                                                                               "%(username)s"    => $user -> {"username"},
+                                                                                               "%(gravhash)s"    => $user -> {"gravatar_hash"},
+                                                                                               "%(url-logout)s"  => $self -> build_url(block => "login"  , pathinfo => ["logout"])});
     } # if(!$self -> {"session"} -> anonymous_session())
 
-    return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"  => $title,
-                                                                          "***front_url***" => $fronturl,
-                                                                          "***import***"    => $import,
-                                                                          "***doclink***"   => $docs,
-                                                                          "***profile***"   => $userprofile});
+    return $self -> {"template"} -> load_template("userbar/userbar.tem", {"%(pagename)s"  => $title,
+                                                                          "%(front_url)s" => $fronturl,
+                                                                          "%(import)s"    => $import,
+                                                                          "%(doclink)s"   => $docs,
+                                                                          "%(profile)s"   => $userprofile});
 }
 
 
