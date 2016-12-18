@@ -60,6 +60,7 @@ use strict;
 use parent qw(Webperl::SystemModule);
 use v5.14;
 
+use experimental qw(smartmatch);
 use Webperl::Utils qw(hash_or_hashref array_or_arrayref);
 
 
@@ -421,6 +422,14 @@ sub find {
         $limit .= $args -> {"limit"};
     }
 
+    my $order;
+    given($args -> {"order"}) {
+        when("added")  { $order = "`r`.`created` DESC, `r`.`name` ASC"; }
+        when("viewed") { $order = "`r`.`viewed` DESC, `r`.`name` ASC"; }
+
+        default { $order = "`r`.`name` ASC, `r`.`created` DESC"; }
+    }
+
     # Build and run the search query
     my $query = "SELECT DISTINCT `r`.*, `s`.name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
@@ -429,7 +438,7 @@ sub find {
                  INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u` ON `u`.`user_id` = `r`.`creator_id`
                  $joins
                  WHERE $wherecond
-                 ORDER BY `r`.`name` ASC, `r`.`created` DESC
+                 ORDER BY $order
                  $limit";
     my $search = $self -> {"dbh"} -> prepare($query);
     $search -> execute(@params)
