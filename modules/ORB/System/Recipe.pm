@@ -65,7 +65,7 @@ use Webperl::Utils qw(hash_or_hashref array_or_arrayref);
 
 
 # ============================================================================
-#  Constructor
+#  Constructor and cleanup
 
 ## @cmethod $ new(%args)
 # Create a new Recipe object to manage recipe creation and management.
@@ -83,6 +83,18 @@ sub new {
     my $self     = $class -> SUPER::new(@_);
 
     return $self
+}
+
+
+## @method void clear()
+# Delete all references to entity management objects from the current recipe
+# object. This helps teardown after page generation by making life easier for
+# perl's destructor code.
+#
+sub clear {
+    my $self = shift;
+
+    delete $self -> {"entities"};
 }
 
 
@@ -128,11 +140,11 @@ sub create {
     $self -> clear_error();
 
     # Get IDs for the type and status
-    $args -> {"typeid"} = $self -> {"system"} -> {"types"} -> get_id($args -> {"type"})
-        or return $self -> self_error($self -> {"system"} -> {"types"} -> errstr());
+    $args -> {"typeid"} = $self -> {"entities"} -> {"types"} -> get_id($args -> {"type"})
+        or return $self -> self_error($self -> {"entities"} -> {"types"} -> errstr());
 
-    $args -> {"statusid"} = $self -> {"system"} -> {"states"} -> get_id($args -> {"status"})
-        or return $self -> self_error($self -> {"system"} -> {"states"} -> errstr());
+    $args -> {"statusid"} = $self -> {"entities"} -> {"states"} -> get_id($args -> {"status"})
+        or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
 
     # We need a metadata context for the recipe
     my $metadataid = $self -> _create_recipe_metadata($args -> {"previd"});
@@ -223,8 +235,8 @@ sub set_status {
 
     $self -> clear_error();
 
-    my $statusid = $self -> {"system"} -> {"states"} -> get_id($status)
-        or return $self -> self_error($self -> {"system"} -> {"states"} -> errstr());
+    my $statusid = $self -> {"entities"} -> {"states"} -> get_id($status)
+        or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
 
     my $stateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                               SET `status_id` = ?
@@ -351,15 +363,15 @@ sub find {
 
     # Convert ingredients and tags to IDs for easier query structure
     # This will return an empty array if there are no ingredients to search on
-    my $ingreds = $self -> {"system"} -> {"ingredients"} -> find_ids($args -> {"ingredients"})
-        or return $self -> self_error("Ingredient lookup error: ".$self -> {"system"} -> {"ingredients"} -> errstr());
+    my $ingreds = $self -> {"entities"} -> {"ingredients"} -> find_ids($args -> {"ingredients"})
+        or return $self -> self_error("Ingredient lookup error: ".$self -> {"entities"} -> {"ingredients"} -> errstr());
 
     # Fix the array returned from find_ids so that we only have the id numbers
     $args -> {"ingredids"} = $self -> _hashlist_to_list($ingreds, "id");
 
     # Repeat the process for the recipe tags
-    my $tags = $self -> {"system"} -> {"tags"} -> find_ids($args -> {"tags"})
-        or return $self -> self_error("Tag lookup error: ".$self -> {"system"} -> {"tags"} -> errstr());
+    my $tags = $self -> {"entities"} -> {"tags"} -> find_ids($args -> {"tags"})
+        or return $self -> self_error("Tag lookup error: ".$self -> {"entities"} -> {"tags"} -> errstr());
     $args -> {"tagids"} = $self -> _hashlist_to_list($tags, "id");
 
     # Fix up default matching modes
@@ -370,9 +382,9 @@ sub find {
     my (@params, $joins, @where) = ((), "", ());
 
     # Matching all ingredients or tags requires multiple inner joins
-    $joins .= $self -> _join_fragment($args -> {"ingredids"}, $self -> {"system"} -> {"ingredients"} -> {"entity_table"}, \@params)
+    $joins .= $self -> _join_fragment($args -> {"ingredids"}, $self -> {"entities"} -> {"ingredients"} -> {"entity_table"}, \@params)
         if(scalar(@{$args -> {"ingredids"}}) && $args -> {"ingredmatch"} eq "all");
-    $joins .= $self -> _join_fragment($args -> {"tagids"}, $self -> {"system"} -> {"tags"} -> {"entity_table"}, \@params)
+    $joins .= $self -> _join_fragment($args -> {"tagids"}, $self -> {"entities"} -> {"tags"} -> {"entity_table"}, \@params)
         if(scalar(@{$args -> {"tagids"}}) && $args -> {"tagmatch"} eq "all");
 
     # Simple searches on recipe fields
@@ -493,23 +505,23 @@ sub _add_ingredients {
         # Otherwise, it's a real ingredient, so we need to do the more complex work
         } else {
             # obtain the IDs of entities referenced by this ingredient relation
-            my $ingid = $self -> {"system"} -> {"ingredients"} -> get_id($ingred -> {"name"})
-                or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"system"} -> {"ingredient"} -> errstr());
+            my $ingid = $self -> {"entities"} -> {"ingredients"} -> get_id($ingred -> {"name"})
+                or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"entities"} -> {"ingredients"} -> errstr());
 
-            my $unitid = $self -> {"system"} -> {"units"} -> get_id($ingred -> {"units"})
-                or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"system"} -> {"units"} -> errstr());
+            my $unitid = $self -> {"entities"} -> {"units"} -> get_id($ingred -> {"units"})
+                or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"entities"} -> {"units"} -> errstr());
 
-            my $prepid = $self -> {"system"} -> {"prepmethod"} -> get_id($ingred -> {"prep"})
-                or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"system"} -> {"prepmethod"} -> errstr());
+            my $prepid = $self -> {"entities"} -> {"prep"} -> get_id($ingred -> {"prep"})
+                or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
 
             # If we have an ID we can add the ingredient.
             $addh -> execute($recipeid, $position, $unitid, $prepid, $ingid, $ingred -> {"quant"}, $ingred -> {"notes"}, undef)
                 or return $self -> self_error("Unable to add ingredient '".$ingred -> {"name"}."' to recipe '$recipeid': ".$self -> {"dbh"} -> errstr());
 
             # And increase the entity refcounts
-            $self -> {"system"} -> {"ingredients"} -> increase_refcount($ingid);
-            $self -> {"system"} -> {"units"}       -> increase_refcount($unitid);
-            $self -> {"system"} -> {"prepmethod"}  -> increase_refcount($prepid);
+            $self -> {"entities"} -> {"ingredients"} -> increase_refcount($ingid);
+            $self -> {"entities"} -> {"units"}       -> increase_refcount($unitid);
+            $self -> {"entities"} -> {"prep"}        -> increase_refcount($prepid);
         }
 
         ++$position;
@@ -559,13 +571,13 @@ sub _add_tags {
     # Go through each tag, adding it
     foreach my $tag (@{$tags}) {
         # Try to get the tag id
-        my $tagid = $self -> {"system"} -> {"tags"} -> get_id($tag)
+        my $tagid = $self -> {"entities"} -> {"tags"} -> get_id($tag)
             or return $self -> self_error("Unable to obtain ID for tag '$tag'");
 
         $addh -> execute($recipeid, $tagid)
             or return $self -> self_error("Tag association failed: ".$self -> {"dbh"} -> errstr);
 
-        $self -> {"system"} -> {"tags"} -> increase_refcount($tagid)
+        $self -> {"entities"} -> {"tags"} -> increase_refcount($tagid)
             or return $self -> self_error("Tag refcount change failed");
     }
 

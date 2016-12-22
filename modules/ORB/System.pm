@@ -27,7 +27,8 @@ use parent qw(Webperl::System);
 
 use ORB::System::Metadata;
 use ORB::System::Roles;
-
+use ORB::System::Entity;
+use ORB::System::Recipe;
 
 ## @method $ init(%args)
 # Initialise the ORB System's references to other system objects. This
@@ -53,6 +54,7 @@ sub init {
     $self -> SUPER::init(@_)
         or return undef;
 
+    # Metadata and permissions handling gubbins
     $self -> {"metadata"} = ORB::System::Metadata -> new(dbh      => $self -> {"dbh"},
                                                          settings => $self -> {"settings"},
                                                          logger   => $self -> {"logger"})
@@ -63,6 +65,23 @@ sub init {
                                                    logger   => $self -> {"logger"},
                                                    metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
+
+    # Objects used to track entities
+    foreach my $entity ("ingredients", "prep", "states", "tags", "types", "units") {
+        $self -> {"entities"} -> {$entity} = ORB::System::Entity -> new(dbh          => $self -> {"dbh"},
+                                                                        settings     => $self -> {"settings"},
+                                                                        logger       => $self -> {"logger"},
+                                                                        entity_table => $entity)
+        or return $self -> self_error("'$entity' system init failed: ".$Webperl::SystemModule::errstr);
+    }
+
+    # And we need a recipe object that pulls it all together
+    $self -> {"recipe"} = ORB::System::Recipe -> new(dbh      => $self -> {"dbh"},
+                                                     settings => $self -> {"settings"},
+                                                     logger   => $self -> {"logger"},
+                                                     metadata => $self -> {"metadata"},
+                                                     entities => $self -> {"entities"})
+        or return $self -> self_error("Recipe model init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;
 }
