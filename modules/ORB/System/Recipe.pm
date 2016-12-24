@@ -670,7 +670,7 @@ sub _renumber_recipe {
     my $newid = $self -> {"dbh"} -> {"mysql_insertid"}
         or return $self -> self_error("Unable to obtain id for new recipe");
 
-    $self -> _fix_recipe_relations($sourceid, $destid)
+    $self -> _fix_recipe_relations($sourceid, $newid)
         or return undef;
 
     # Nuke the old recipe
@@ -701,9 +701,9 @@ sub _fix_recipe_relations {
     $self -> clear_error();
 
     # Move ingredient relation IDs
-    $moveh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."`
-                                          SET `recipe_id` = ?
-                                          WHERE `recipe_id` = ?");
+    my $moveh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."`
+                                             SET `recipe_id` = ?
+                                             WHERE `recipe_id` = ?");
     $moveh -> execute($destid, $sourceid)
         or return $self -> self_error("Ingredient relation fixup failed: ".$self -> {"dbh"} -> errstr());
 

@@ -48,7 +48,7 @@ use ORB::System::Recipe;
 # @return true on success, false if something failed. If this returns false,
 #         the reason is in $self -> {"errstr"}.
 sub init {
-    my $self   = shift;
+    my $self = shift;
 
     # Let the superclass copy the references over
     $self -> SUPER::init(@_)

@@ -165,19 +165,19 @@ sub destroy {
     }
 
     # Check that the entity is safe to delete...
-    my $refcount = $self -> _fetch_refcount($id);
+    my $refcount = $self -> _fetch_refcount($args -> {"id"});
 
-    return $self -> self_error("Attempt to delete non-existent entity $id from ".$self -> {"entity_table"})
+    return $self -> self_error("Attempt to delete non-existent entity ".$args -> {"id"}." from ".$self -> {"entity_table"})
         unless(defined($refcount));
 
-    return $self -> self_error("Attempt to delete entity $id in ".$self -> {"entity_table"}." while still in use ($refcount references)")
+    return $self -> self_error("Attempt to delete entity ".$args -> {"id"}." in ".$self -> {"entity_table"}." while still in use ($refcount references)")
         if($refcount);
 
     # And now delete the entity itself
     my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
                                              WHERE `id` = ?");
     $nukeh -> execute($args -> {"id"})
-        or return $self -> self_error("Unable to perform entity $id removal from ".$self -> {"entity_table"}.": ". $self -> {"dbh"} -> errstr);
+        or return $self -> self_error("Unable to perform entity ".$args -> {"id"}." removal from ".$self -> {"entity_table"}.": ". $self -> {"dbh"} -> errstr);
 
     return 1;
 }
@@ -206,7 +206,7 @@ sub get_id {
 
     # Multiple results are potentially dangerous. Log it as an error, but return the first hit anyway
     if(scalar(@{$id}) > 1) {
-        $self -> self_error("Multiple matches for specified entity name '".$args -> {"name"}."'");
+        $self -> self_error("Multiple matches for specified entity name '$name'");
         return $id -> [0]
     }
 
