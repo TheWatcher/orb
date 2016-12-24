@@ -210,8 +210,8 @@ sub edit {
         or return undef;
 
     # Set the status of the edited recipe
-    $self -> set_state($args -> {"previd"},
-                       $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited")
+    $self -> set_status($args -> {"previd"},
+                        $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited")
         or return undef;
 
     return $args -> {"id"};
