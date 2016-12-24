@@ -123,6 +123,10 @@ sub clear {
 # -        `type`: The recipe type
 # -      `status`: The recipe status
 # -   `creatorid`: The ID of the user who created the recipe
+# -     `created`: (optional) The Unix timestamp to set for the creation
+#                  time for the recipe. If not provided, this is set to
+#                  the current time. Generally this will be left on the
+#                  default unless doing an import.
 # - `ingredients`: A reference to an array of ingredient hashes. See the
 #                  documentation for _add_ingredients() for the
 #                  required hash values
@@ -146,14 +150,33 @@ sub create {
     $args -> {"statusid"} = $self -> {"entities"} -> {"states"} -> get_id($args -> {"status"})
         or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
 
+    # Sort out create time
+    $args -> {"created"} = time()
+        unless($args -> {"created"});
+
     # We need a metadata context for the recipe
     my $metadataid = $self -> _create_recipe_metadata($args -> {"previd"});
 
     # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                             (`id`, `metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP())");
-    my $result = $newh -> execute($args -> {"id"}, $metadataid, $args -> {"previd"}, $args -> {"name"}, $args -> {"source"}, $args -> {"timereq"}, $args -> {"timemins"}, $args -> {"yield"}, $args -> {"temp"}, $args -> {"temptype"}, $args -> {"method"}, $args -> {"notes"}, $args -> {"typeid"}, $args -> {"statusid"}, $args -> {"creatorid"});
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $result = $newh -> execute($args -> {"id"},
+                                  $metadataid,
+                                  $args -> {"previd"},
+                                  $args -> {"name"},
+                                  $args -> {"source"},
+                                  $args -> {"timereq"},
+                                  $args -> {"timemins"},
+                                  $args -> {"yield"},
+                                  $args -> {"temp"},
+                                  $args -> {"temptype"},
+                                  $args -> {"method"},
+                                  $args -> {"notes"},
+                                  $args -> {"typeid"},
+                                  $args -> {"statusid"},
+                                  $args -> {"creatorid"},
+                                  $args -> {"created"});
     return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr)
         if(!$result);
 
