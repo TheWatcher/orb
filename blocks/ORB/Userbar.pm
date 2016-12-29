@@ -23,7 +23,8 @@ package ORB::Userbar;
 
 use strict;
 use parent qw(ORB);
-use v5.12;
+use experimental qw(smartmatch);
+use v5.14;
 
 
 # ==============================================================================
@@ -46,42 +47,57 @@ sub block_display {
 
     $self -> clear_error();
 
-    my $loginurl = $self -> build_url(block => "login",
-                                      fullurl  => 1,
-                                      pathinfo => [],
-                                      params   => {},
-                                      forcessl => 1);
+    my $urls = { "signin"  => $self -> build_url(block => "login",
+                                                fullurl  => 1,
+                                                pathinfo => [],
+                                                params   => {},
+                                                forcessl => 1),
+                 "signout" => $self -> build_url(block => "login",
+                                                fullurl  => 1,
+                                                pathinfo => [ "logout" ],
+                                                params   => {},
+                                                forcessl => 1),
+                 "signup"  => $self -> build_url(block => "login",
+                                                 fullurl  => 1,
+                                                 pathinfo => [ "signup" ],
+                                                 params   => {},
+                                                 forcessl => 1),
+                 "front"   => $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
+                                                 fullurl  => 1,
+                                                 pathinfo => [],
+                                                 params   => {})
+    };
 
-    my $fronturl = $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
-                                      fullurl  => 1,
-                                      pathinfo => [],
-                                      params   => {});
-
-    # Initialise fragments to sane "logged out" defaults.
-    my ($userprofile) =
-        ($self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"%(url-login)s" => $loginurl}),
-        );
+    my $userprofile;
 
     # Is the user logged in?
     if(!$self -> {"session"} -> anonymous_session()) {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $import  = $self -> {"template"} -> load_template("userbar/import_enabled.tem"  , {"%(url-import)s" => $self -> build_url(block => "import", pathinfo => [])})
-            if($self -> check_permission("import") && $current ne "import");
-
         # User is logged in, so actually reflect their current options and state
-        $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"%(realname)s"    => $user -> {"fullname"},
-                                                                                               "%(username)s"    => $user -> {"username"},
-                                                                                               "%(gravhash)s"    => $user -> {"gravatar_hash"},
-                                                                                               "%(url-logout)s"  => $self -> build_url(block => "login"  , pathinfo => ["logout"])});
-    } # if(!$self -> {"session"} -> anonymous_session())
+        $userprofile = $self -> {"template"} -> load_template("userbar/profile_signedin.tem",
+                                                              { "%(realname)s"    => $user -> {"fullname"},
+                                                                "%(username)s"    => $user -> {"username"},
+                                                                "%(gravhash)s"    => $user -> {"gravatar_hash"},
+                                                                "%(url-signout)s" => $urls -> {"signout"},
+                                                              });
 
-    return $self -> {"template"} -> load_template("userbar/userbar.tem", {"%(pagename)s"  => $title,
-                                                                          "%(front_url)s" => $fronturl,
-                                                                          "%(import)s"    => $import,
-                                                                          "%(doclink)s"   => $docs,
-                                                                          "%(profile)s"   => $userprofile});
+    } else {
+        my $signup = $self -> {"template"} -> load_template("userbar/profile_signup.tem")
+            if($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"});
+
+        $userprofile = $self -> {"template"} -> load_template("userbar/profile_signedout.tem",
+                                                              { "%(signup)s"    => $signup,
+                                                                "%(url-signin)s" => $urls -> {"signin"},
+                                                                "%(url-signup)s" => $urls -> {"signup"},
+                                                              });
+    }
+
+    return $self -> {"template"} -> load_template("userbar/userbar.tem",
+                                                  { "%(pagename)s"  => $title,
+                                                    "%(url-front)s" => $urls -> {"front"},
+                                                    "%(profile)s"   => $userprofile});
 }
 
 
