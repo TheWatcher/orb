@@ -139,7 +139,7 @@ sub load_language {
 }
 
 
-my $settings = Webperl::ConfigMicro -> new("../config/site.cfg")
+my $settings = Webperl::ConfigMicro -> new("../config/config.cfg")
     or die "Unable to open configuration file: ".$Webperl::SystemModule::errstr."\n";
 
 die "No 'language' table defined in configuration, unable to proceed.\n"
