@@ -212,7 +212,8 @@ sub create {
 #
 # @param args This should be a reference to a hash containing the same
 #             elements as the args hash for create(), except previd is
-#             required here
+#             required here. This should also contain the field
+#             `updaterid` containing the ID of the user doing the edit.
 # @return The recipe Id on success, undef on error.
 sub edit {
     my $self = shift;
@@ -234,27 +235,30 @@ sub edit {
 
     # Set the status of the edited recipe
     $self -> set_status($args -> {"previd"},
-                        $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited")
+                        $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "edited",
+                        $args -> {"updaterid"})
         or return undef;
 
     return $args -> {"id"};
 }
 
 
-## @method $ set_status($recipeid, $status)
+## @method $ set_status($recipeid, $status, $updaterid)
 # Set the recipe status to the specified value. This will convert the provided
 # status to a status ID and set that as the status if the recipe.
 #
 # @note The settings table may define a number of special state names, with
 #       the setting names 'Recipe:status:edited' and 'Recipe:status:deleted'
 #
-# @param recipeid The ID of the recipe to set the status for.
-# @param status   The status of the recipe. This should be a string, not an ID.
+# @param recipeid  The ID of the recipe to set the status for.
+# @param status    The status of the recipe. This should be a string, not an ID.
+# @param updaterid The ID of the user who updated the status.
 # @return true on success, undef on error.
 sub set_status {
-    my $self     = shift;
-    my $recipeid = shift;
-    my $status   = shift;
+    my $self      = shift;
+    my $recipeid  = shift;
+    my $status    = shift;
+    my $updaterid = shift;
 
     $self -> clear_error();
 
@@ -262,9 +266,9 @@ sub set_status {
         or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
 
     my $stateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                              SET `status_id` = ?
+                                              SET `status_id` = ?, `updater_id` = ?, `updated` = UNIX_TIMESTAMP()
                                               WHERE `id` = ?");
-    my $result = $stateh -> execute($statusid, $recipeid);
+    my $result = $stateh -> execute($statusid, $updaterid, $recipeid);
     return $self -> self_error("Status update of recipe failed: ".$self -> {"dbh"} -> errstr)
         if(!$result);
 
