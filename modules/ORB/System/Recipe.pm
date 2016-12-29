@@ -113,7 +113,7 @@ sub clear {
 #                  call edit() to have renumbering handled for you.
 # -        `name`: The name of the recipe
 # -      `source`: (optional) Where did the recipe come from originally?
-# -     `timereq`: A string describing the time required for the recipe
+# -     `timereq`: (optional) A string describing the time required for the recipe
 # -    `timemins`: How long does the recipe take in minutes, in total?
 # -       `yield`: A string describing how much stuff the recipe creates
 # -        `temp`: (optional) Oven preheat temperature
@@ -127,9 +127,22 @@ sub clear {
 #                  time for the recipe. If not provided, this is set to
 #                  the current time. Generally this will be left on the
 #                  default unless doing an import.
-# - `ingredients`: A reference to an array of ingredient hashes. See the
-#                  documentation for _add_ingredients() for the
-#                  required hash values
+# - `ingredients`: A reference to an array of ingredient hashes. The order of
+#                  ingredient hashes determines the position in the recipe
+#                  ingredient list. Each hash should contain the following keys:
+#                  - `separator`: if true, the ingredient is a separator,
+#                                 `name` is set as the separator line title, and
+#                                 all the other fields are ignored.
+#                  -      `name`: the ingredient name (or separator title if
+#                                 `separator` is true.
+#                  -  `quantity`: a string describing the quantity. Note that
+#                                 this is a 10-char text field and may be
+#                                 anything from a simple number to "some".
+#                  -     `units`: The units to use for the quantity. May be
+#                                 undef. If specified, this should be a string
+#                                 containing the unit name.
+#                  -      `prep`: A string describing the preparation method.
+#                  -     `notes`: Optional notes for the ingredient.
 # -        `tags`: The tags to set for the recipe, may be either a comma
 #                  separated string of tags, or a reference to an array
 #                  of tags. May be undef or an empty string.
@@ -496,17 +509,7 @@ sub find {
 # Add the specified ingredients to the recipe list for the specified recipe.
 # This goes through the array of ingredients and adds each entry to the
 # ingredient list for the specified recipe. The ingredients are specified
-# as an array of hashrefs, each hash should contain the following keys:
-#
-# - `separator`: if true, the ingredient is a separator, `name` is set
-#                as the separator line title, and all the other fields
-#                are ignored.
-# -      `name`: the ingredient name (or separator title if `separator` is true.
-# -     `quant`: a string describing the quantity. Note that this may be
-#                anything from a simple numeric value to "some".
-# -     `units`: The units to use for the quantity. May be undef.
-# -      `prep`: A string describing the preparation method.
-# -     `notes`: Optional notes for the ingredient.
+# as an array of hashrefs, see create() for hash contents.
 #
 # @param recipeid    The id of the recipe to add the ingredients to.
 # @param ingredients A reference to an array of hashes containing ingredient
