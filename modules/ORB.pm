@@ -27,7 +27,7 @@ use v5.14;
 use parent qw(Webperl::Block); # Features are just a specific form of Block
 use CGI::Util qw(escape);
 use HTML::Entities;
-use Webperl::Utils qw(join_complex path_join);
+use Webperl::Utils qw(join_complex path_join hash_or_hashref);
 use XML::Simple;
 use DateTime;
 use JSON;
