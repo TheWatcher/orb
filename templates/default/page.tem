@@ -4,26 +4,40 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>%(title)s</title>
-        <link rel="stylesheet" href="{V_[templatepath]}foundation/css/foundation.min.css" />
+        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/foundation/css/foundation.min.css" />
+        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/fontawesome/css/font-awesome.min.css" />
+
         <link rel="stylesheet" href="{V_[csspath]}notebox.css" />
         <link rel="stylesheet" href="{V_[csspath]}foundation.mods.css" />
 %(extrahead)s
     </head>
     <body>
-        <!-- Start top bar -->
+        <!-- canvas wrapper -->
+        <div class="off-canvas-wrapper">
+%(leftmenu)s
+
+            <!-- content wrapper -->
+            <div class="off-canvas-content" data-off-canvas-content>
+                <!-- Start top bar -->
 %(userbar)s
-        <!-- End top bar -->
-        <br />
-        <!-- Start content -->
-        <div class="row" id="content">
+                <!-- End top bar -->
+                <br />
+                <!-- Start content -->
+                <div class="row" id="content">
 %(content)s
-        </div>
-        <!-- End content -->
+                </div>
+                <!-- End content -->
+
+            </div><!-- content wrapper -->
+        </div><!-- canvas wrapper -->
+
         <!-- Foundation and other javascript shenanigans -->
-        <script src="{V_[templatepath]}foundation/js/vendor/jquery.js"></script>
-        <script src="{V_[templatepath]}foundation/js/vendor/foundation.min.js"></script>
+        <script src="{V_[templatepath]}3rdparty/foundation/js/vendor/jquery.js"></script>
+        <script src="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.js"></script>
+        <script src="{V_[templatepath]}3rdparty/foundation/js/vendor/foundation.min.js"></script>
+        <script src="{V_[jspath]}foundation.js"></script>
         <script>
-            $(document).foundation();
 %(extrajs)s
         </script>
     </body>
