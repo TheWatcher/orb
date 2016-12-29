@@ -159,8 +159,8 @@ sub create {
 
     # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                            (`id`, `metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                            (`id`, `metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
     my $result = $newh -> execute($args -> {"id"},
                                   $metadataid,
                                   $args -> {"previd"},
@@ -175,6 +175,8 @@ sub create {
                                   $args -> {"notes"},
                                   $args -> {"typeid"},
                                   $args -> {"statusid"},
+                                  $args -> {"creatorid"},
+                                  $args -> {"created"},
                                   $args -> {"creatorid"},
                                   $args -> {"created"});
     return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr)
