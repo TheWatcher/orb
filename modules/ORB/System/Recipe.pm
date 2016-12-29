@@ -310,14 +310,24 @@ sub get_recipe {
 
     $self -> clear_error();
 
+    my $query = "SELECT `r`.*,
+                        `s`.`name` AS `status`,
+                        `t`.`name` AS `type`,
+                        `c`.`username` AS `creatoruser`, `c`,`realname` AS `creatorname`
+                        `u`.`username` AS `updateuser`, `u`,`realname` AS `updatename`
+                 FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`
+                     ON `s`.`id` = `r`.`status_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."`  AS `t`
+                     ON `t`.`id` = `r`.`type_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."`  AS `c`
+                     ON `c`.`user_id` = `r`.`creator_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."`  AS `u`
+                     ON `u`.`user_id` = `r`.`updater_id`
+                 WHERE `r`.`id` = ?";
+
     # Fetch the recipe itself, along with names of singular relations
-    my $recipeh = $self -> {"dbh"} -> prepare("SELECT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`, `u`.`user_id`, `u`,`username`, `u`,`realname`
-                                               FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`,
-                                                    `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`,
-                                                    `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t`
-                                               WHERE `s`.`id` = `r`.`status_id`
-                                               AND `t`.`id` = `r`.`type_id`
-                                               AND `r`.`id` = ?");
+    my $recipeh = $self -> {"dbh"} -> prepare($query);
     $recipeh -> execute($recipeid)
         or return $self -> self_error("Unable to perform recipe lookup: ".$self -> {"dbh"} -> errstr);
 
