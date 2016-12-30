@@ -194,27 +194,27 @@ sub message_box {
         # Build the list of buttons...
         my $buttonlist = "";
         foreach my $button (@{$args -> {"buttons"}}) {
-            $buttonlist .= $self -> load_template("messagebox/button.tem",
-                                                  { "%(colour)s"  => $button -> {"colour"},
-                                                    "%(href)s"    => $button -> {"href"},
-                                                    "%(message)s" => $button -> {"message"}
-                                                  });
+            $buttonlist .= $self -> {"template"} -> load_template("messagebox/button.tem",
+                                                                  { "%(colour)s"  => $button -> {"colour"},
+                                                                    "%(href)s"    => $button -> {"href"},
+                                                                    "%(message)s" => $button -> {"message"}
+                                                                  });
         }
 
         # Shove into the bar
-        $buttonbar = $self -> load_template("messagebox/buttonbar.tem",
-                                            { "%(buttons)s" => $buttonlist });
+        $buttonbar = $self -> {"template"} -> load_template("messagebox/buttonbar.tem",
+                                                            { "%(buttons)s" => $buttonlist });
     }
 
-    return $self -> load_template("messagebox/box.tem",
-                                  { "%(title)s"      => $args -> {"title"},
-                                    "%(icon)s"       => $args -> {"type"},
-                                    "%(summary)s"    => $args -> {"summary"},
-                                    "%(longdesc)s"   => $args -> {"message"},
-                                    "%(additional)s" => $args -> {"additional"},
-                                    "%(buttons)s"    => $args -> {"buttonbar"},
-                                    "%(class)s"      => $args -> {"class"},
-                                  });
+    return $self -> {"template"} -> load_template("messagebox/box.tem",
+                                                  { "%(title)s"      => $args -> {"title"},
+                                                    "%(icon)s"       => $args -> {"type"} // "important",
+                                                    "%(summary)s"    => $args -> {"summary"},
+                                                    "%(message)s"    => $args -> {"message"},
+                                                    "%(additional)s" => $args -> {"additional"},
+                                                    "%(class)s"      => $args -> {"class"},
+                                                    "%(buttons)s"    => $buttonbar,
+                                                  });
 }
 
 
