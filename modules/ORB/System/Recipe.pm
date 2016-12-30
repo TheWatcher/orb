@@ -557,7 +557,7 @@ sub _add_ingredients {
                 or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
 
             # If we have an ID we can add the ingredient.
-            $addh -> execute($recipeid, $position, $unitid, $prepid, $ingid, $ingred -> {"quant"}, $ingred -> {"notes"}, undef)
+            $addh -> execute($recipeid, $position, $unitid, $prepid, $ingid, $ingred -> {"quantity"}, $ingred -> {"notes"}, undef)
                 or return $self -> self_error("Unable to add ingredient '".$ingred -> {"name"}."' to recipe '$recipeid': ".$self -> {"dbh"} -> errstr());
 
             # And increase the entity refcounts
