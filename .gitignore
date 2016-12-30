@@ -6,3 +6,4 @@ config/*.cfg
 templates/default/foundation
 templates/default/js_*
 templates/default/css_*
+templates/default/3rdparty/
