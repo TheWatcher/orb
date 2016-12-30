@@ -148,15 +148,18 @@ sub generate_errorbox {
 
     $self -> log("error:fatal", $args -> {"message"});
 
-    return $self -> message_box(title   => $args -> {"title"} // "{L_FATAL_ERROR}",
-                                type    => "error",
-                                summary => "{L_FATAL_ERROR_SUMMARY}",
-                                message => $args -> {"message"},
-                                buttons => [ { "message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                               "colour"  => "standard",
-                                               "href"    => "{V_[scriptpath]}"
-                                             }
-                                ]);
+    return ($args -> {"title"},
+            $self -> message_box(title   => $args -> {"title"} // "{L_FATAL_ERROR}",
+                                 type    => "error",
+                                 class   => "alert",
+                                 summary => "{L_FATAL_ERROR_SUMMARY}",
+                                 message => $args -> {"message"},
+                                 buttons => [ { "message" => "{L_SITE_CONTINUE}",
+                                                "colour"  => "standard",
+                                                "href"    => "{V_[scriptpath]}"
+                                              }
+                                 ])
+        );
 }
 
 
