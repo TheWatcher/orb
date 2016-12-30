@@ -1,1 +1,1 @@
-                        <div class="buttonbox">%(buttons)s</div>
+                        <div class="button-group text-right nomargin">%(buttons)s</div>

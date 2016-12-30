@@ -9,6 +9,7 @@
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/fontawesome/css/font-awesome.min.css" />
 
         <link rel="stylesheet" href="{V_[csspath]}notebox.css" />
+        <link rel="stylesheet" href="{V_[csspath]}messagebox.css" />
         <link rel="stylesheet" href="{V_[csspath]}foundation.mods.css" />
 %(extrahead)s
     </head>
