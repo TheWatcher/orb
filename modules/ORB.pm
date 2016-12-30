@@ -133,76 +133,88 @@ sub generate_orb_page {
 }
 
 
-## @method $ generate_errorbox($message, $title)
+## @method $ generate_errorbox(%args)
 # Generate the HTML to show in the page when a fatal error has been encountered.
+# The following options can be specified in the arguments:
 #
-# @param message The message to show in the page.
-# @param title   The title to use for the error. If not set "{L_FATAL_ERROR}" is used.
+# - `message`: The message to show in the page.
+# - `title`:   The title to use for the error. If not set "{L_FATAL_ERROR}" is used.
+#
+# @param args A hash, or reference to a hash, of options.
 # @return A string containing the page
 sub generate_errorbox {
-    my $self    = shift;
-    my $message = shift;
-    my $title   = shift || "{L_FATAL_ERROR}";
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
-    $self -> log("error:fatal", $message);
+    $self -> log("error:fatal", $args -> {"message"});
 
-    $message = $self -> message_boc($title,
-                                    "error",
-                                    "{L_FATAL_ERROR_SUMMARY}",
-                                    $message,
-                                    undef,
-                                    "errorcore",
-                                    [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                           "colour"  => "blue",
-                                           "action"  => "location.href='{V_[scriptpath]}'"} ]);
-    my $userbar = $self -> {"module"} -> load_module("ORB::Userbar");
-
-    # Build the error page...
-    return $self -> {"template"} -> load_template("page.tem",
-                                                  {"%(title)s"     => $title,
-                                                   "%(content)s"   => $message,
-                                                   "%(extrahead)s" => "",
-                                                   "%(extrajs)s"   => "",
-                                                   "%(userbar)s"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
-                                                  });
+    return $self -> message_box(title   => $args -> {"title"} // "{L_FATAL_ERROR}",
+                                type    => "error",
+                                summary => "{L_FATAL_ERROR_SUMMARY}",
+                                message => $args -> {"message"},
+                                buttons => [ { "message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                               "colour"  => "standard",
+                                               "href"    => "{V_[scriptpath]}"
+                                             }
+                                ]);
 }
 
 
-## @method $ generate_multiselect($name, $class, $idbase, $options, $selected)
-# Generate a MultiSelect dropdown list (essentially a list of checkboxes that gets
-# converted to a dropdown using the MultiSelect javascript module).
+## @method $ message_box(%args)
+# Create a message box block to include in a page. This generates a templated
+# message box to include in a page. It assumes the presence of messagebox.tem
+# in the template directory, containing markers for a title, type, summary,
+# long description and additional data. The type argument should correspond
+# to an image in the {template}/images/messages/ directory without an extension.
+# Supported arguments are:
 #
-# @param name     The name of the multiselect option list.
-# @param class    A class to add to the class attribute for the checkboxes in the list.
-# @param idbase   A unique base name for the ID of checkboxes in the list.
-# @param options  A reference to an array of option hashes. Each hash should contain
-#                 `name` a short name used in the class, `id` a numeric ID used in the
-#                 id and value attributes, and `desc` used in the label.
-# @param selected A reference to a list of selected option IDs.
-# @return A string containing the multiselect list checkboxes.
-sub generate_multiselect {
-    my $self     = shift;
-    my $name     = shift;
-    my $class    = shift;
-    my $idbase   = shift;
-    my $options  = shift;
-    my $selected = shift;
+#  - `title`:      The title of the message box.
+#  - `type`:       The message type.
+#  - `class`:      Optional additional classes to set on the box.
+#  - `summary`:    A summary version of the message.
+#  - `message`:    The full message body
+#  - `additional`: Any additional content to include in the message box.
+#  - `buttons`:    Optional reference to an array of hashes containing button
+#                  data. Each hash in the array should contain three keys:
+#                  - `colour`: specifies the button colour
+#                  - `href`: the href to set in the button
+#                  - `message`: the message to show in the button.
+#
+# @param args A hash, or reference to a hash, of arguments.
+# @return A string containing the message box.
+sub message_box {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
-    # Convert the selected list to a hash for faster lookup
-    my %active = map { $_ => 1} @{$selected};
+    my $buttonbar = "";
 
-    my $result = "";
-    foreach my $option (@{$options}) {
-        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"%(class)s"   => $class,
-                                                                                "%(idbase)s"  => $idbase,
-                                                                                "%(selname)s" => $name,
-                                                                                "%(name)s"    => $option -> {"name"},
-                                                                                "%(id)s"      => $option -> {"id"},
-                                                                                "%(desc)s"    => $option -> {"desc"},
-                                                                                "%(checked)s" => $active{$option -> {"id"}} ? 'checked="checked"' : ''});
+    # Has the caller specified any buttons?
+    if($args -> {"buttons"}) {
+
+        # Build the list of buttons...
+        my $buttonlist = "";
+        foreach my $button (@{$args -> {"buttons"}}) {
+            $buttonlist .= $self -> load_template("messagebox/button.tem",
+                                                  { "%(colour)s"  => $button -> {"colour"},
+                                                    "%(href)s"    => $button -> {"href"},
+                                                    "%(message)s" => $button -> {"message"}
+                                                  });
+        }
+
+        # Shove into the bar
+        $buttonbar = $self -> load_template("messagebox/buttonbar.tem",
+                                            { "%(buttons)s" => $buttonlist });
     }
 
-    return $result;
+    return $self -> load_template("messagebox/box.tem",
+                                  { "%(title)s"      => $args -> {"title"},
+                                    "%(icon)s"       => $args -> {"type"},
+                                    "%(summary)s"    => $args -> {"summary"},
+                                    "%(longdesc)s"   => $args -> {"message"},
+                                    "%(additional)s" => $args -> {"additional"},
+                                    "%(buttons)s"    => $args -> {"buttonbar"},
+                                    "%(class)s"      => $args -> {"class"},
+                                  });
 }
 
 
