@@ -1,25 +1,27 @@
-LOGIN_TITLE     = Log in
-LOGIN_LOGINFORM = Log in
-LOGIN_INTRO     = Enter your username and password to log in.
+LOGIN_ERR_FATAL = Fatal error
+
+LOGIN_TITLE     = Sign in
+LOGIN_LOGINFORM = Sign in
+LOGIN_INTRO     = Enter your username and password to sign in.
 LOGIN_USERNAME  = Username
 LOGIN_PASSWORD  = Password
 LOGIN_EMAIL     = Email address
 LOGIN_PERSIST   = Remember me
-LOGIN_LOGIN     = Log in
+LOGIN_LOGIN     = Sign in
 LOGIN_FAILED    = Login failed
 LOGIN_RECOVER   = Forgotten your username or password?
 LOGIN_SENDACT   = Click to resend your activation code
 
 PERSIST_WARNING = <strong>WARNING</strong>: do not enable the "Remember me" option on shared, cluster, or public computers. This option should only be enabled on machines you have exclusive access to.
 
-LOGIN_DONETITLE  = Logged in
-LOGIN_SUMMARY    = You have successfully logged into the system.
-LOGIN_LONGDESC   = You have successfully logged in, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
-LOGIN_NOREDIRECT = You have successfully logged in, but warnings were encountered during login. Please check the warning messages, and <a href="mailto:***supportaddr***">contact support</a> if a serious problem has been encountered, otherwise, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGIN_DONETITLE  = Signed in
+LOGIN_SUMMARY    = You have successfully signed into the system.
+LOGIN_LONGDESC   = You have successfully signed in, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGIN_NOREDIRECT = You have successfully signed in, but warnings were encountered during login. Please check the warning messages, and <a href="mailto:***supportaddr***">contact support</a> if a serious problem has been encountered, otherwise, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 
-LOGOUT_TITLE    = Logged out
-LOGOUT_SUMMARY  = You have successfully logged out.
-LOGOUT_LONGDESC = You have successfully logged out, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGOUT_TITLE    = Signed out
+LOGOUT_SUMMARY  = You have successfully signed out.
+LOGOUT_LONGDESC = You have successfully signed out, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 
 LOGIN_ERR_BADUSERCHAR = Illegal character in username. Usernames may only contain alphanumeric characters, underscores, or hyphens.
 LOGIN_ERR_INVALID     = Login failed: unknown username or password provided.
@@ -48,7 +50,7 @@ LOGIN_REG_LONGDESC   = A new user account has been created for you, and an email
 LOGIN_REG_SUBJECT    = {V_[sitename]} account created - Activation required!
 LOGIN_REG_GREETING   = Hi ***username***
 LOGIN_REG_CREATED    = A new account in the {V_[sitename]} system has just been created for you. Your username and password for the system are given below.
-LOGIN_REG_ACTNEEDED  = Before you can log in, you must activate your account. To activate your account, please click on the following link, or copy and paste it into your web browser:
+LOGIN_REG_ACTNEEDED  = Before you can sign in, you must activate your account. To activate your account, please click on the following link, or copy and paste it into your web browser:
 LOGIN_REG_ALTACT     = Alternatively, enter the following code in the account activation form:
 LOGIN_REG_ENJOY      = Thank you for registering!
 
@@ -64,7 +66,7 @@ LOGIN_ERR_BADCODE    = The provided activation code is invalid: either your acco
 # Activation done
 LOGIN_ACT_DONETITLE  = Account activated
 LOGIN_ACT_SUMMARY    = Activation successful!
-LOGIN_ACT_LONGDESC   = Your new account has been acivated, and you can now <a href="***url-login***">log in</a> using your username and the password emailed to you.
+LOGIN_ACT_LONGDESC   = Your new account has been acivated, and you can now <a href="***url-login***">sign in</a> using your username and the password emailed to you.
 
 # Recovery related
 LOGIN_RECFORM         = Recover account details
@@ -88,11 +90,11 @@ LOGIN_ERR_NORECINACT  = Your account is inactive, and therefore can not be recov
 LOGIN_RESET_SUBJECT   = Your {V_[sitename]} account
 LOGIN_RESET_GREET     = Hi ***username***
 LOGIN_RESET_INTRO     = Your password has been reset, and your username and new password are given below:
-LOGIN_RESET_LOGIN     = To log into the {V_[sitename]}, please go to the following form and enter the username and password above. Once you have logged in, please change your password.
+LOGIN_RESET_LOGIN     = To sign into the {V_[sitename]}, please go to the following form and enter the username and password above. Once you have signed in, please change your password.
 
 LOGIN_RESET_DONETITLE  = Account reset complete
 LOGIN_RESET_SUMMARY    = Password reset successfully
-LOGIN_RESET_LONGDESC   = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your {V_[sitename]} account', you can use the account information it contains to log into the system by clicking the 'Log in' button below.
+LOGIN_RESET_LONGDESC   = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your {V_[sitename]} account', you can use the account information it contains to sign into the system by clicking the 'Sign in' button below.
 LOGIN_RESET_ERRTITLE   = Account reset failed
 LOGIN_RESET_ERRSUMMARY = Password reset failed
 LOGIN_RESET_ERRDESC    = The system has been unable to reset your account. The error encountered was:<br /><br/>***reason***
@@ -126,11 +128,10 @@ LOGIN_OLDPASS           = Your current password
 LOGIN_SETPASS           = Change password
 LOGIN_PASSCHANGE_FAILED = Password change failed
 
-LOGIN_PASSCHANGE_ERRNOUSER = No logged in user detected, password change unsupported.
+LOGIN_PASSCHANGE_ERRNOUSER = No signed in user detected, password change unsupported.
 LOGIN_PASSCHANGE_ERRMATCH  = The new password specified does not match the confirm password.
 LOGIN_PASSCHANGE_ERRSAME   = The new password can not be the same as the old password.
-LOGIN_PASSCHANGE_ERRVALID  = The specified old password is not correct. You must enter the password you used to log in.
-
+LOGIN_PASSCHANGE_ERRVALID  = The specified old password is not correct. You must enter the password you used to sign in.
 
 LOGIN_POLICY                 = Password policy
 LOGIN_POLICY_INTRO           = When choosing a new password, keep in mind that:
@@ -152,7 +153,7 @@ LOGIN_POLICY_MIN_ENTROPYERR   = The supplied password is not strong enough.
 LOGIN_POLICY_USE_CRACKLIBERR  = ***set***
 
 LOGIN_POLICY_MAX_PASSWORDAGE = Passwords must be changed after ***value*** days.
-LOGIN_POLICY_MAX_LOGINFAIL   = You can log in incorrectly ***value*** times before your account needs reactivation.
+LOGIN_POLICY_MAX_LOGINFAIL   = You can sign in incorrectly ***value*** times before your account needs reactivation.
 
 LOGIN_CRACKLIB_WAYSHORT   = The password is far too short.
 LOGIN_CRACKLIB_TOOSHORT   = The password is too short.
@@ -169,7 +170,7 @@ LOGIN_LOCKEDOUT         = You have exceeded the number of login failures permitt
 LOGIN_LOCKOUT_SUBJECT   = {V_[sitename]} account locked
 LOGIN_LOCKOUT_GREETING  = Hi
 LOGIN_LOCKOUT_MESSAGE   = Your '{V_[sitename]}' account has deactivated and your password has been changed because more than ***faillimit*** login failures have been recorded for your account. This may be the result of attempted unauthorised access to your account - if you are not responsible for these login attempts you should probably contact the site administator to report that your account may be under attack. Your username and new password for the site are:
-LOGIN_LOCKOUT_ACTNEEDED = As your account has been deactivated, before you can successfully log in you will need to reactivate your account. To do this, please click on the following link, or copy and paste it into your web browser:
+LOGIN_LOCKOUT_ACTNEEDED = As your account has been deactivated, before you can successfully sign in you will need to reactivate your account. To do this, please click on the following link, or copy and paste it into your web browser:
 LOGIN_LOCKOUT_ALTACT    = Alternatively, enter the following code in the account activation form:
 
 #
