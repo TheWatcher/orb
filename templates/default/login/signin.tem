@@ -16,8 +16,8 @@
                         </div>
                         <div class="persist">
 %(persist)s
-                            <div class="contextlink">(<a href="%(url-forgot)s">{L_LOGIN_RECOVER}</a>)</div>
                         </div>
+                        <div class="contextlink">(<a href="%(url-forgot)s">{L_LOGIN_RECOVER}</a>)</div>
                         <div class="submit clearfix">
                             <input type="submit" class="button float-right nomargin" id="signin" name="signin" value="{L_LOGIN_LOGIN}" />
                         </div>
