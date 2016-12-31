@@ -777,11 +777,11 @@ sub _generate_signin_form {
         $self -> {"template"} -> load_template("login/persist_disabled.tem");
 
     return ("{L_LOGIN_TITLE}",
-            $self -> {"template"} -> load_template("login/signin.tem", {"%(error)s"      => $error,
-                                                                        "%(persist)s"    => $persist,
-                                                                        "%(url-forgot)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]),
-                                                                        "%(target)s"     => $self -> build_url("block" => "login"),
-                                                                        "%(username)s"   => $args -> {"username"}}),
+            $self -> {"template"} -> load_template("login/form_signin.tem", {"%(error)s"      => $error,
+                                                                             "%(persist)s"    => $persist,
+                                                                             "%(url-forgot)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]),
+                                                                             "%(target)s"     => $self -> build_url("block" => "login"),
+                                                                             "%(username)s"   => $args -> {"username"}}),
             $self -> {"template"} -> load_template("login/extrahead.tem"),
             $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
@@ -804,12 +804,12 @@ sub _generate_signup_form {
         if($error);
 
     return ("{L_LOGIN_SIGNUP_TITLE}",
-            $self -> {"template"} -> load_template("login/signup.tem", {"%(error)s"        => $error,
-                                                                        "%(sitekey)s"      => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
-                                                                        "%(url-activate)s" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
-                                                                        "%(target)s"       => $self -> build_url("block" => "login", "pathinfo" => [ "signup" ]),
-                                                                        "%(username)s"     => $args -> {"username"},
-                                                                        "%(email)s"        => $args -> {"email"}}),
+            $self -> {"template"} -> load_template("login/form_signup.tem", {"%(error)s"        => $error,
+                                                                             "%(sitekey)s"      => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
+                                                                             "%(url-activate)s" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
+                                                                             "%(target)s"       => $self -> build_url("block" => "login", "pathinfo" => [ "signup" ]),
+                                                                             "%(username)s"     => $args -> {"username"},
+                                                                             "%(email)s"        => $args -> {"email"}}),
             $self -> {"template"} -> load_template("login/signup_extrahead.tem"),
             $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
@@ -829,9 +829,9 @@ sub _generate_actcode_form {
         if($error);
 
     return ("{L_LOGIN_TITLE}",
-            $self -> {"template"} -> load_template("login/act_form.tem", {"%(error)s"      => $error,
-                                                                          "%(target)s"     => $self -> build_url("block" => "login"),
-                                                                          "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}),
+            $self -> {"template"} -> load_template("login/form_activate.tem", {"%(error)s"      => $error,
+                                                                               "%(target)s"     => $self -> build_url("block" => "login"),
+                                                                               "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}),
             $self -> {"template"} -> load_template("login/extrahead.tem"),
             $self -> {"template"} -> load_template("login/extrajs.tem"));
 }

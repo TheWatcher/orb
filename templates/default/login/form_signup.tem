@@ -14,7 +14,7 @@
                                 <input type="text" id="email" name="email" size="24" maxlength="255" value="%(email)s"/>
                             </label>
                         </div>
-                        <div class="contextlink">(<a href="%(url-activate)s">{L_LOGIN_ACTFORM}</a>)</div>
+                        <div class="contextlink">(<a href="%(url-activate)s">{L_LOGIN_ACTIVATE_FORM}</a>)</div>
                         <div class="g-recaptcha" data-sitekey="%(sitekey)s"></div>
                         <div class="submit clearfix">
                             <input type="submit" class="button float-right nomargin" id="signup" name="signup" value="{L_LOGIN_SIGNUP}" />
