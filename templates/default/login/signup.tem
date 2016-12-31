@@ -2,7 +2,7 @@
 %(error)s
                 <!-- Start signup form -->
                 <div class="signupform callout secondary">
-                    <div>{L_LOGIN_REG_INTRO}</div>
+                    <div>{L_LOGIN_SIGNUP_INTRO}</div>
                     <form id="signinform" method="post" action="%(target)s">
                         <div class="entry">
                             <label for="username">{L_LOGIN_USERNAME}:<br />
@@ -17,7 +17,7 @@
                         <div class="contextlink">(<a href="%(url-activate)s">{L_LOGIN_ACTFORM}</a>)</div>
                         <div class="g-recaptcha" data-sitekey="%(sitekey)s"></div>
                         <div class="submit clearfix">
-                            <input type="submit" class="button float-right nomargin" id="signup" name="signup" value="{L_LOGIN_REGISTER}" />
+                            <input type="submit" class="button float-right nomargin" id="signup" name="signup" value="{L_LOGIN_SIGNUP}" />
                         </div>
                     </form>
                 </div>

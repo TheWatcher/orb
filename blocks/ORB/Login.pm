@@ -26,7 +26,8 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use Webperl::Utils qw(path_join is_defined_numeric);
-use Data::Dumper;
+use LWP::UserAgent;
+use JSON;
 use v5.14;
 
 # ============================================================================
@@ -54,7 +55,7 @@ sub _signup_email {
                                      "block"    => "login",
                                      "pathinfo" => [ "activate" ]);
 
-    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_REG_SUBJECT"),
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_SIGNUP_SUBJECT"),
                                                          message => $self -> {"template"} -> load_template("login/email_signedup.tem",
                                                                                                            {"%(username)s" => $user -> {"username"},
                                                                                                             "%(password)s" => $password,
@@ -305,6 +306,147 @@ sub _validate_signin {
 }
 
 
+## @method private $ _validate_recaptcha($response)
+# Given a response code submitted as part of an operation by the user, ask the
+# google reCAPTCHA validation service to check whether the response is valid.
+#
+# @param response The reCAPTCHA response code submitted by the user
+# @return true if the code is valid, false if is not, undef on error.
+sub _validate_recaptcha {
+    my $self     = shift;
+    my $response = shift;
+
+    $self -> clear_error();
+
+    my $ua = LWP::UserAgent -> new();
+
+    my $data = {
+        "secret"   => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_secret"},
+        "response" => $response,
+        "remoteip" => $self -> {"cgi"} -> remote_addr()
+    };
+
+    # Ask the recaptcha server to verify the response
+    my $resp = $ua -> post($self -> {"settings"} -> {"config"} -> {"Login:recaptcha_verify"}, $data);
+    if($resp -> is_success()) {
+
+        # Convert the validator response
+        my $json = eval { decode_json($resp -> decoded_content()) };
+        return $self -> self_error("JSON decoding failed: $@") if($@);
+
+        $self -> log("recaptcha:status", "Validation response: ".($json -> {"success"} ? "successful" : "failed")." JSON: ".$resp -> decoded_content());
+
+        return 1 if($json -> {"success"});
+    } else {
+        return $self -> self_error("HTTP problem: ".$resp -> status_line());
+    }
+
+    return 0;
+}
+
+
+## @method private @ _validate_signup()
+# Determine whether the username, email, and security question provided by the user
+# are valid. If they are, return true.
+#
+# @return The new user's record on success, an error string if the signup failed.
+sub _validate_signup {
+    my $self   = shift;
+    my $error  = "";
+    my $errors = "";
+    my $args   = {};
+
+    # User attempted self-register when it is disabled? Naughty user, no cookie!
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                       "%(reason)s"  => "{L_LOGIN_ERR_NOSELFREG}"}), $args)
+        unless($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"});
+
+    # Check that the username is provided and valid
+    ($args -> {"username"}, $error) = $self -> validate_string("username", {"required"   => 1,
+                                                                          "nicename"   => "{L_LOGIN_USERNAME}",
+                                                                          "minlen"     => 2,
+                                                                          "maxlen"     => 32,
+                                                                          "formattest" => '^[-\w ]+$',
+                                                                          "formatdesc" => "{L_LOGIN_ERR_BADUSERCHAR}"
+                                                              });
+    # Is the username valid?
+    if($error) {
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
+    } else {
+        # Is the username in use?
+        my $user = $self -> {"session"} -> get_user($args -> {"username"});
+        $errors .= $self -> {"template"} -> load_template("error/error.tem",
+                                                          { "%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                            "%(reason)s"  => $self -> {"template"} -> replace_langvar("LOGIN_ERR_USERINUSE",
+                                                                                                                      { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
+                                                          })
+            if($user);
+    }
+
+    # And the email
+    ($args -> {"email"}, $error) = $self -> validate_string("email", {"required"   => 1,
+                                                                      "nicename"   => "{L_LOGIN_EMAIL}",
+                                                                      "minlen"     => 2,
+                                                                      "maxlen"     => 256
+                                                            });
+    if($error) {
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
+    } else {
+
+        # Check that the address is structured in a vaguely valid way
+        # Yes, this is not fully RFC compliant, but frankly going down that road invites a
+        # level of utter madness that would make Azathoth himself utter "I say, steady on now..."
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => "{L_LOGIN_ERR_BADEMAIL}"})
+            if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
+
+        # Is the email address in use?
+        my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_EMAILINUSE",
+                                                                                                                                            { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
+                                                          })
+            if($user);
+    }
+
+    # Pull the reCAPTCHA response code
+    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
+                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
+                                                                                         "minlen"     => 2,
+                                                                                         "formattest" => '^[-\w]+$',
+                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
+                                                                });
+
+    # Halt here if there are any problems.
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                            "%(errors)s" => $errors}), $args)
+        if($errors);
+
+    # Is the response valid?
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                            "%(errors)s"  => "{L_LOGIN_ERR_RECAPTCHA}"}), $args)
+        unless($self -> _validate_recaptcha($args -> {"recaptcha"}));
+
+
+    # Get here an the user's details are okay, register the new user.
+    my $methodimpl = $self -> {"session"} -> {"auth"} -> get_authmethod_module($self -> {"settings"} -> {"config"} -> {"default_authmethod"})
+        or return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                              "%(reason)s"  => $self -> {"session"} -> {"auth"} -> errstr() }),
+                   $args);
+
+    my ($user, $password) = $methodimpl -> create_user($args -> {"username"}, $self -> {"settings"} -> {"config"} -> {"default_authmethod"}, $args -> {"email"});
+    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                       "%(reason)s"  => $methodimpl -> errstr() }),
+            $args)
+        if(!$user);
+
+    # Send registration email
+    my $err = $self -> _signup_email($user, $password);
+    return ($err, $args) if($err);
+
+    # User is registered...
+    return ($user, $args);
+}
+
+
 ## @method private @ validate_passchange()
 # Determine whether the password change request made by the user is valid. If the
 # password change is valid (passwords match, pass policy, and the old password is
@@ -378,8 +520,8 @@ sub _validate_passchange {
         foreach my $name (@{$policy_fails -> {"policy_order"}}) {
             next if(!$policy_fails -> {$name});
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(error)s"   => "{L_LOGIN_".uc($name)."ERR}",
-                                                                                             "%(set)s"     => $policy_fails -> {$name} -> [1],
-                                                                                             "%(require)s" => $policy_fails -> {$name} -> [0] });
+                                                                                       "%(set)s"     => $policy_fails -> {$name} -> [1],
+                                                                                       "%(require)s" => $policy_fails -> {$name} -> [0] });
         }
     }
 
@@ -400,103 +542,6 @@ sub _validate_passchange {
     # No need to keep the passchange variable now
     $self -> {"session"} -> set_variable("passchange_reason", undef);
 
-    return ($user, $args);
-}
-
-
-## @method private @ _validate_signup()
-# Determine whether the username, email, and security question provided by the user
-# are valid. If they are, return true.
-#
-# @return The new user's record on success, an error string if the signup failed.
-sub _validate_signup {
-    my $self   = shift;
-    my $error  = "";
-    my $errors = "";
-    my $args   = {};
-
-    # User attempted self-register when it is disabled? Naughty user, no cookie!
-    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                       "%(reason)s"  => "{L_LOGIN_ERR_NOSELFREG}"}), $args)
-        unless($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"});
-
-    # Check that the username is provided and valid
-    ($args -> {"regname"}, $error) = $self -> validate_string("regname", {"required"   => 1,
-                                                                          "nicename"   => "{L_LOGIN_USERNAME}",
-                                                                          "minlen"     => 2,
-                                                                          "maxlen"     => 32,
-                                                                          "formattest" => '^[-\w ]+$',
-                                                                          "formatdesc" => "{L_LOGIN_ERR_BADUSERCHAR}"
-                                                              });
-    # Is the username valid?
-    if($error) {
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
-    } else {
-        # Is the username in use?
-        my $user = $self -> {"session"} -> get_user($args -> {"regname"});
-        $errors .= $self -> {"template"} -> load_template("error/error.tem",
-                                                          { "%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                            "%(reason)s"  => $self -> {"template"} -> replace_langvar("LOGIN_ERR_USERINUSE",
-                                                                                                                      { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
-                                                          })
-            if($user);
-    }
-
-    # And the email
-    ($args -> {"email"}, $error) = $self -> validate_string("email", {"required"   => 1,
-                                                                      "nicename"   => "{L_LOGIN_EMAIL}",
-                                                                      "minlen"     => 2,
-                                                                      "maxlen"     => 256
-                                                            });
-    if($error) {
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $error});
-    } else {
-
-        # Check that the address is structured in a vaguely valid way
-        # Yes, this is not fully RFC compliant, but frankly going down that road invites a
-        # level of utter madness that would make Azathoth himself utter "I say, steady on now..."
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => "{L_LOGIN_ERR_BADEMAIL}"})
-            if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
-
-        # Is the email address in use?
-        my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"%(reason)s" => $self -> {"template"} -> replace_langvar("LOGIN_ERR_EMAILINUSE",
-                                                                                                                                            { "%(url-recover)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]) })
-                                                          })
-            if($user);
-    }
-
-    # FIXME: Validate the recaptcha code here.
-    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
-                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
-                                                                                         "minlen"     => 2,
-                                                                                         "maxlen"     => 32,
-                                                                                         "formattest" => '^[-\w]+$',
-                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADUSERCHAR}"
-                                                                });
-
-    # Halt here if there are any problems.
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s" => $errors}), $args)
-        if($errors);
-
-    # Get here an the user's details are okay, register the new user.
-    my $methodimpl = $self -> {"session"} -> {"auth"} -> get_authmethod_module($self -> {"settings"} -> {"config"} -> {"default_authmethod"})
-        or return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                              "%(reason)s"  => $self -> {"session"} -> {"auth"} -> errstr() }),
-                   $args);
-
-    my ($user, $password) = $methodimpl -> create_user($args -> {"regname"}, $self -> {"settings"} -> {"config"} -> {"default_authmethod"}, $args -> {"email"});
-    return ($self -> {"template"} -> load_template("error/error.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                       "%(reason)s"  => $methodimpl -> errstr() }),
-            $args)
-        if(!$user);
-
-    # Send registration email
-    my $err = $self -> signup_email($user, $password);
-    return ($err, $args) if($err);
-
-    # User is registered...
     return ($user, $args);
 }
 
@@ -760,7 +805,7 @@ sub _generate_signup_form {
 
     return ("{L_LOGIN_SIGNUP_TITLE}",
             $self -> {"template"} -> load_template("login/signup.tem", {"%(error)s"        => $error,
-                                                                        "%(sitekey)s"      => $self -> {"settings"} -> {"config"} -> {"Login:self_register_sitekey"},
+                                                                        "%(sitekey)s"      => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
                                                                         "%(url-activate)s" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
                                                                         "%(target)s"       => $self -> build_url("block" => "login", "pathinfo" => [ "signup" ]),
                                                                         "%(username)s"     => $args -> {"username"},
@@ -971,16 +1016,14 @@ sub _generate_signedup {
     my $url = $self -> build_url(block    => "login",
                                  pathinfo => [ "activate" ]);
 
-    return ("{L_LOGIN_REG_DONETITLE}",
-            $self -> message_box("{L_LOGIN_REG_DONETITLE}",
-                                 "security",
-                                 "{L_LOGIN_REG_SUMMARY}",
-                                 "{L_LOGIN_REG_LONGDESC}",
-                                 undef,
-                                 "logincore",
-                                 [ {"message" => "{L_LOGIN_ACTIVATE}",
-                                    "colour"  => "blue",
-                                    "action"  => "location.href='$url'"} ]));
+    return ("{L_LOGIN_SIGNUP_DONETITLE}",
+            $self -> message_box(title   => "{L_LOGIN_SIGNUP_DONETITLE}",
+                                 type    => "account",
+                                 summary => "{L_LOGIN_SIGNUP_SUMMARY}",
+                                 message => "{L_LOGIN_SIGNUP_MESSAGE}",
+                                 buttons => [ {"message" => "{L_LOGIN_ACTIVATE}",
+                                               "colour"  => "warning",
+                                               "href"    => $url} ]));
 }
 
 

@@ -27,32 +27,31 @@ LOGIN_ERR_BADUSERCHAR = Illegal character in username. Usernames may only contai
 LOGIN_ERR_INVALID     = Login failed: unknown username or password provided.
 
 # Registration-related stuff
-LOGIN_REGISTER   = Sign up
-LOGIN_REG_INTRO  = Create an account by choosing a username and giving a valid email address. A password will be emailed to you.
-LOGIN_SECURITY   = Security question
-LOGIN_SEC_INTRO  = In order to prevent abuse by automated spamming systems, please answer the following question to prove that you are a human.<br/>Note: the answer is not case sensitive.
-LOGIN_SEC_SUBMIT = Sign up
+LOGIN_SIGNUP_TITLE     = Sign up
+LOGIN_SIGNUP_INTRO     = Create an account by choosing a username and giving a valid email address. A password and activation code will be emailed to you, so you must have access to the email address.
+LOGIN_SIGNUP           = Sign up
 
-LOGIN_ERR_NOSELFREG  = Self-registration is not currently permitted.
-LOGIN_ERR_REGFAILED  = Registration failed
-LOGIN_ERR_BADSECURE  = You did not answer the security question correctly, please check your answer and try again.
-LOGIN_ERR_BADEMAIL   = The specified email address does not appear to be valid.
-LOGIN_ERR_USERINUSE  = The specified username is already in use. If you can't remember your password, <strong>please use the <a href="%(url-recover)s">account recovery</a> facility</strong> rather than attempt to make a new account.
-LOGIN_ERR_EMAILINUSE = The specified email address is already in use. If you can't remember your username or password, <strong>please use the <a href="%(url-recover)s">account recovery</a> facility</strong> rather than attempt to make a new account.
-LOGIN_ERR_INACTIVE   = Your account is currently inactive. Please check your email for an 'Activation Required' email and follow the link it contains to activate your account. If you have not received an actication email, or need a new one, <a href="%(url-resend)s">request a new activation email</a>.
+LOGIN_ERR_NOSELFREG    = Self-registration is not currently permitted.
+LOGIN_ERR_REGFAILED    = Registration failed
+LOGIN_ERR_BADRECAPTCHA = reCAPTCHA information in your request was missing or corrupt
+LOGIN_ERR_RECAPTCHA    = The reCAPTCHA verifcation step failed, please try again
+LOGIN_ERR_BADEMAIL     = The specified email address does not appear to be valid.
+LOGIN_ERR_USERINUSE    = The specified username is already in use. If you can't remember your password, <strong>please use the <a href="%(url-recover)s">account recovery</a> facility</strong> rather than attempt to make a new account.
+LOGIN_ERR_EMAILINUSE   = The specified email address is already in use. If you can't remember your username or password, <strong>please use the <a href="%(url-recover)s">account recovery</a> facility</strong> rather than attempt to make a new account.
+LOGIN_ERR_INACTIVE     = Your account is currently inactive. Please check your email for an 'Activation Required' email and follow the link it contains to activate your account. If you have not received an actication email, or need a new one, <a href="%(url-resend)s">request a new activation email</a>.
 
 # Registration done
-LOGIN_REG_DONETITLE  = Registration successful
-LOGIN_REG_SUMMARY    = Activation required!
-LOGIN_REG_LONGDESC   = A new user account has been created for you, and an email has been sent to you with your new account password and an activation link.<br /><br />Please check your email for a message with the subject '{V_[sitename]} account created - Activation required!' and follow the instructions it contains to activate your account.
+LOGIN_SIGNUP_DONETITLE = Signup successful
+LOGIN_SIGNUP_SUMMARY   = Activation required!
+LOGIN_SIGNUP_MESSAGE   = A new user account has been created for you, and an email has been sent to you with your new account password and an activation link.<br /><br />Please check your email for a message with the subject '{V_[sitename]} account created - Activation required!' and follow the instructions it contains to activate your account.
 
 # Registration email
-LOGIN_REG_SUBJECT    = {V_[sitename]} account created - Activation required!
-LOGIN_REG_GREETING   = Hi %(username)s
-LOGIN_REG_CREATED    = A new account in the {V_[sitename]} system has just been created for you. Your username and password for the system are given below.
-LOGIN_REG_ACTNEEDED  = Before you can sign in, you must activate your account. To activate your account, please click on the following link, or copy and paste it into your web browser:
-LOGIN_REG_ALTACT     = Alternatively, enter the following code in the account activation form:
-LOGIN_REG_ENJOY      = Thank you for registering!
+LOGIN_SIGNUP_SUBJECT    = {V_[sitename]} account created - Activation required!
+LOGIN_SIGNUP_GREETING   = Hi %(username)s
+LOGIN_SIGNUP_CREATED    = A new account in the {V_[sitename]} system has just been created for you. Your username and password for the system are given below.
+LOGIN_SIGNUP_ACTNEEDED  = Before you can sign in, you must activate your account. To activate your account, please click on the following link, or copy and paste it into your web browser:
+LOGIN_SIGNUP_ALTACT     = Alternatively, enter the following code in the account activation form:
+LOGIN_SIGNUP_ENJOY      = Thank you for registering!
 
 # Activation related
 LOGIN_ACTCODE        = Activation code
