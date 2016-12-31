@@ -559,13 +559,13 @@ sub _validate_actcode {
 
     # Check that the code has been provided and contains allowed characters
     ($args -> {"actcode"}, $error) = $self -> validate_string("actcode", {"required"   => 1,
-                                                                          "nicename"   => "{L_LOGIN_ACTCODE}",
+                                                                          "nicename"   => "{L_LOGIN_ACTIVATE_CODE}",
                                                                           "minlen"     => 64,
                                                                           "maxlen"     => 64,
                                                                           "formattest" => '^[a-zA-Z0-9]+$',
                                                                           "formatdesc" => "{L_LOGIN_ERR_BADACTCHAR}"});
     # Bomb out at this point if the code is not valid.
-    return $self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_ACTFAILED}",
+    return $self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_ACTIVATE_FAILED}",
                                                                        "%(reason)s"  => $error})
         if($error);
 
@@ -574,7 +574,7 @@ sub _validate_actcode {
     # we don't actually know which user is being activated until the actcode lookup is done. And generally, if
     # an act code has been set, the authmethod supports activation anyway!
     my $user = $self -> {"session"} -> {"auth"} -> activate_user($args -> {"actcode"});
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_ACTFAILED}",
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_ACTIVATE_FAILED}",
                                                                         "%(reason)s"  => "{L_LOGIN_ERR_BADCODE}"}), $args)
         unless($user);
 
@@ -815,6 +815,28 @@ sub _generate_signup_form {
 }
 
 
+## @method private @ generate_actcode_form($error)
+# Generate a form through which the user may specify an activation code.
+#
+# @param error A string containing errors related to activating, or undef.
+# @return An array of two values: the page title string, the code form
+sub _generate_actcode_form {
+    my $self  = shift;
+    my $error = shift;
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
+        if($error);
+
+    return ("{L_LOGIN_TITLE}",
+            $self -> {"template"} -> load_template("login/act_form.tem", {"%(error)s"      => $error,
+                                                                          "%(target)s"     => $self -> build_url("block" => "login"),
+                                                                          "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}),
+            $self -> {"template"} -> load_template("login/extrahead.tem"),
+            $self -> {"template"} -> load_template("login/extrajs.tem"));
+}
+
+
 ## @method private @ generate_passchange_form($error)
 # Generate a form through which the user can change their password, used to
 # support forced password changes.
@@ -846,26 +868,6 @@ sub _generate_passchange_form {
                                                                                 "%(policy)s" => $policy,
                                                                                 "%(reason)s" => $reasons -> {$reason},
                                                                                 "%(rid)s"    => $reason } ));
-}
-
-
-## @method private @ generate_actcode_form($error)
-# Generate a form through which the user may specify an activation code.
-#
-# @param error A string containing errors related to activating, or undef.
-# @return An array of two values: the page title string, the code form
-sub _generate_actcode_form {
-    my $self  = shift;
-    my $error = shift;
-
-    # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
-        if($error);
-
-    return ("{L_LOGIN_TITLE}",
-            $self -> {"template"} -> load_template("login/act_form.tem", {"%(error)s"      => $error,
-                                                                          "%(target)s"     => $self -> build_url("block" => "login"),
-                                                                          "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}));
 }
 
 
@@ -988,20 +990,18 @@ sub _generate_signedout {
 sub _generate_activated {
     my $self = shift;
 
-    my $target = $self -> build_url(block    => "login",
-                                    pathinfo => []);
+    my $url = $self -> build_url(block    => "login",
+                                 pathinfo => []);
 
-    return ("{L_LOGIN_ACT_DONETITLE}",
-            $self -> message_box("{L_LOGIN_ACT_DONETITLE}",
-                                 "security",
-                                 "{L_LOGIN_ACT_SUMMARY}",
-                                 $self -> {"template"} -> replace_langvar("LOGIN_ACT_LONGDESC",
-                                                                          {"%(url-login)s" => $self -> build_url("block" => "login")}),
-                                 undef,
-                                 "logincore",
-                                 [ {"message" => "{L_LOGIN_LOGIN}",
-                                    "colour"  => "blue",
-                                    "action"  => "location.href='$target'"} ]));
+    return ("{L_LOGIN_ACTIVATE_DONETITLE}",
+            $self -> message_box(title   => "{L_LOGIN_ACTIVATE_DONETITLE}",
+                                 type    => "account",
+                                 summary => "{L_LOGIN_ACTIVATE_SUMMARY}",
+                                 message => $self -> {"template"} -> replace_langvar("LOGIN_ACTIVATE_MESSAGE",
+                                                                                     {"%(url-login)s" => $self -> build_url("block" => "login")}),
+                                 buttons => [ {"message" => "{L_LOGIN_LOGIN}",
+                                               "colour"  => "standard",
+                                               "href"    => "$url"} ]));
 }
 
 
@@ -1022,7 +1022,7 @@ sub _generate_signedup {
                                  summary => "{L_LOGIN_SIGNUP_SUMMARY}",
                                  message => "{L_LOGIN_SIGNUP_MESSAGE}",
                                  buttons => [ {"message" => "{L_LOGIN_ACTIVATE}",
-                                               "colour"  => "warning",
+                                               "colour"  => "standard",
                                                "href"    => $url} ]));
 }
 

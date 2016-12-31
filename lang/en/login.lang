@@ -54,18 +54,19 @@ LOGIN_SIGNUP_ALTACT     = Alternatively, enter the following code in the account
 LOGIN_SIGNUP_ENJOY      = Thank you for registering!
 
 # Activation related
-LOGIN_ACTCODE        = Activation code
-LOGIN_ACTFAILED      = User account activation failed
-LOGIN_ACTFORM        = Activate account
-LOGIN_ACTINTRO       = Please enter your 64 character activation code here.
-LOGIN_ACTIVATE       = Activate account
-LOGIN_ERR_BADACTCHAR = Activation codes may only contain alphanumeric characters.
-LOGIN_ERR_BADCODE    = The provided activation code is invalid: either your account is already active, or you entered the code incorrectly. Note that the code is case sensitive - upper and lower case characters are treated differently. Please check you entered the code correctly.
+LOGIN_ACTIVATE_CODE   = Activation code
+LOGIN_ACTIVATE_FAILED = User account activation failed
+LOGIN_ACTIVATE_FORM   = Activate account
+LOGIN_ACTIVATE_INTRO  = Please enter your 64 character activation code here.
+LOGIN_ACTIVATE_RESEND = Resend activation code
+LOGIN_ACTIVATE        = Activate account
+LOGIN_ERR_BADACTCHAR  = Activation codes may only contain alphanumeric characters.
+LOGIN_ERR_BADCODE     = The provided activation code is invalid: either your account is already active, or you entered the code incorrectly. Note that the code is case sensitive - upper and lower case characters are treated differently. Please check you entered the code correctly.
 
 # Activation done
-LOGIN_ACT_DONETITLE  = Account activated
-LOGIN_ACT_SUMMARY    = Activation successful!
-LOGIN_ACT_LONGDESC   = Your new account has been acivated, and you can now <a href="%(url-login)s">sign in</a> using your username and the password emailed to you.
+LOGIN_ACTIVATE_DONETITLE  = Account activated
+LOGIN_ACTIVATE_SUMMARY    = Activation successful!
+LOGIN_ACTIVATE_MESSAGE    = Your new account has been acivated, and you can now <a href="%(url-login)s">sign in</a> using your username and the password emailed to you.
 
 # Recovery related
 LOGIN_RECFORM         = Recover account details
@@ -116,6 +117,7 @@ LOGIN_RESEND_FAILED  = Activation code resend failed
 LOGIN_RESEND_DONETITLE  = Activation code resent
 LOGIN_RESEND_SUMMARY    = Resend successful!
 LOGIN_RESEND_LONGDESC   = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} activation code' and follow the instructions it contains to activate your account.
+
 # Force password change
 LOGIN_PASSCHANGE        = Change password
 LOGIN_FORCECHANGE_INTRO = Before you continue, please choose a new password to set for your account.
