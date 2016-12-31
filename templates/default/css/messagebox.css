@@ -12,5 +12,10 @@
 }
 
 .messagebox .mbcontent img {
-    padding-right: 0.25rem;
+    padding-right: 0.5rem;
+    box-sizing: initial;
+}
+
+.messagebox h4 {
+    border-bottom: 1px solid #888;
 }
