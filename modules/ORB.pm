@@ -215,7 +215,7 @@ sub message_box {
                                                     "%(summary)s"    => $args -> {"summary"},
                                                     "%(message)s"    => $args -> {"message"},
                                                     "%(additional)s" => $args -> {"additional"},
-                                                    "%(class)s"      => $args -> {"class"},
+                                                    "%(class)s"      => $args -> {"class"} // "secondary",
                                                     "%(buttons)s"    => $buttonbar,
                                                   });
 }
