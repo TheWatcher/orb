@@ -12,7 +12,7 @@
 {L_LOGIN_SIGNUP_ALTACT}
 
 %(act_form)s
-%(act_code)s
+{L_LOGIN_ACTIVATE_CODE}: %(act_code)s
 
 {L_LOGIN_SIGNUP_ENJOY}
 --

@@ -3,7 +3,7 @@
                 <!-- Start activate form -->
                 <div class="activateform callout secondary">
                     <div>{L_LOGIN_ACTIVATE_INTRO}</div>
-                    <form id="activateform" method="post" action="%(target)s">
+                    <form id="activateform" method="post" action="%(url-target)s">
                         <div class="entry">
                             <label for="actcode">{L_LOGIN_ACTIVATE_CODE}:<br />
                                 <input type="text" id="actcode" name="actcode" size="24" maxlength="64" />

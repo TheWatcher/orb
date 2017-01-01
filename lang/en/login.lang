@@ -7,6 +7,7 @@ LOGIN_USERNAME  = Username
 LOGIN_PASSWORD  = Password
 LOGIN_EMAIL     = Email address
 LOGIN_PERSIST   = Remember me
+LOGIN_RECAPTCHA = reCAPTCHA
 LOGIN_LOGIN     = Sign in
 LOGIN_FAILED    = Login failed
 LOGIN_RECOVER   = Forgotten your username or password?
@@ -16,12 +17,12 @@ PERSIST_WARNING = <strong>WARNING</strong>: do not enable the "Remember me" opti
 
 LOGIN_DONETITLE  = Signed in
 LOGIN_SUMMARY    = You have successfully signed into the system.
-LOGIN_LONGDESC   = You have successfully signed in, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGIN_MESSAGE   = You have successfully signed in, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 LOGIN_NOREDIRECT = You have successfully signed in, but warnings were encountered during login. Please check the warning messages, and <a href="mailto:%(supportaddr)s">contact support</a> if a serious problem has been encountered, otherwise, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 
 LOGOUT_TITLE    = Signed out
 LOGOUT_SUMMARY  = You have successfully signed out.
-LOGOUT_LONGDESC = You have successfully signed out, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGOUT_MESSAGE = You have successfully signed out, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 
 LOGIN_ERR_BADUSERCHAR = Illegal character in username. Usernames may only contain alphanumeric characters, underscores, or hyphens.
 LOGIN_ERR_INVALID     = Login failed: unknown username or password provided.
@@ -80,7 +81,7 @@ LOGIN_RECOVER_IGNORE  = If you did not request this reset, please either ignore 
 LOGIN_RECOVER_FAILED  = Account recovery failed
 LOGIN_RECOVER_DONETITLE = Account recovery code sent
 LOGIN_RECOVER_SUMMARY   = Recovery code sent!
-LOGIN_RECOVER_LONGDESC  = An account recovery code has been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} account' and follow the instructions it contains.
+LOGIN_RECOVER_MESSAGE  = An account recovery code has been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} account' and follow the instructions it contains.
 LOGIN_ERR_NOUID       = No user id specified.
 LOGIN_ERR_BADUID      = The specfied user id is not valid.
 LOGIN_ERR_BADRECCHAR  = Account reset codes may only contain alphanumeric characters.
@@ -94,16 +95,17 @@ LOGIN_RESET_LOGIN     = To sign into the {V_[sitename]}, please go to the follow
 
 LOGIN_RESET_DONETITLE  = Account reset complete
 LOGIN_RESET_SUMMARY    = Password reset successfully
-LOGIN_RESET_LONGDESC   = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your {V_[sitename]} account', you can use the account information it contains to sign into the system by clicking the 'Sign in' button below.
+LOGIN_RESET_MESSAGE    = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your {V_[sitename]} account', you can use the account information it contains to sign into the system by clicking the 'Sign in' button below.
 LOGIN_RESET_ERRTITLE   = Account reset failed
 LOGIN_RESET_ERRSUMMARY = Password reset failed
 LOGIN_RESET_ERRDESC    = The system has been unable to reset your account. The error encountered was:<br /><br/>%(reason)s
 
 # Activation resend
-LOGIN_RESENDFORM     = Resend activation code
-LOGIN_RESENDINTRO    = If you have accidentally deleted your activation email, or you have not received an an activation email more than 30 minutes after creating an account, enter your account email address below to be sent your activation code again.<br /><br/><strong>IMPORTANT</strong>: requesting a new copy of your activation code will also reset your password. If you later receive the original registration email, the code and password it contains will not work and should be ignored.
-LOGIN_RESENDEMAIL    = Email address
-LOGIN_DORESEND       = Resend code
+LOGIN_RESEND_TITLE   = Resend activation code
+LOGIN_RESEND_DESC    = If you have accidentally deleted your activation email, or you have not received an an activation email more than 30 minutes after creating an account, enter your account email address below to be sent your activation code again.<br /><br/><strong>IMPORTANT</strong>: requesting a new copy of your activation code will also reset your password. If you later receive the original registration email, the code and password it contains will not work and should be ignored.
+LOGIN_RESEND_EMAIL   = Email address
+LOGIN_RESEND         = Resend code
+
 LOGIN_ERR_BADUSER    = The email address provided does not appear to belong to any account in the system.
 LOGIN_ERR_BADAUTH    = The user account with the provided email address does not have a valid authentication method associated with it. This should not happen!
 LOGIN_ERR_ALREADYACT = The user account with the provided email address is already active, and does not need a code to be activated.
@@ -116,7 +118,7 @@ LOGIN_RESEND_FAILED  = Activation code resend failed
 
 LOGIN_RESEND_DONETITLE  = Activation code resent
 LOGIN_RESEND_SUMMARY    = Resend successful!
-LOGIN_RESEND_LONGDESC   = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} activation code' and follow the instructions it contains to activate your account.
+LOGIN_RESEND_MESSAGE    = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} activation code' and follow the instructions it contains to activate your account.
 
 # Force password change
 LOGIN_PASSCHANGE        = Change password
