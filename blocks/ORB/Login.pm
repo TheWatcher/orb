@@ -1419,14 +1419,24 @@ sub _dispatch_ui {
     my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
     given($pathinfo[0]) {
+        # `signup` creates the accoung, and sends an activation code. The user then goes to
+        # `activate` to activate their account, or `resend` to request a new code
         when("signup")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signup();     }
-        when("signout")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signout();    }
         when("activate")   { ($title, $body, $extrahead, $extrajs) = $self -> _handle_activate();   }
         when("resend")     { ($title, $body, $extrahead, $extrajs) = $self -> _handle_resend();     }
+
+        # Account recovery is two stages - first user goes to `recover` and enters the email
+        # to send a recovery code to, then the user goes to `reset` to enter the code and
+        # reset their password
         when("recover")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_recover();    }
         when("reset")      { ($title, $body, $extrahead, $extrajs) = $self -> _handle_reset();      }
+
+        # Passchange can be a forced redirect after reset or signup
         when("passchange") { ($title, $body, $extrahead, $extrajs) = $self -> _handle_passchange(); }
+
+        # default handles signin and redirect, paired with signout to log the user out
         default            { ($title, $body, $extrahead, $extrajs) = $self -> _handle_default();    }
+        when("signout")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signout();    }
     }
 
     # Done generating the page content, return the filled in page template
@@ -1436,12 +1446,6 @@ sub _dispatch_ui {
                                       extrajs   => $extrajs,
                                       doclink   => 'login');
 }
-
-# FIXME: OVERHAUL
-#        } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
-#
-#            my ($user, $args) = $self -> validate_reset();
-#            ($title, $body, $extrahead, $extrajs) = $self -> generate_reset(!ref($user) ? $user : undef);
 
 
 ## @method $ page_display()
