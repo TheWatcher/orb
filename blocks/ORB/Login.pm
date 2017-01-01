@@ -455,6 +455,7 @@ sub _validate_signup {
 # @return An array of two values: A reference to the user's data on success,
 #         or an error string if the change failed, and a reference to a hash of
 #         arguments that passed validation.
+# FIXME: OVERHAUL
 sub _validate_passchange {
     my $self   = shift;
     my $error  = "";
@@ -591,6 +592,7 @@ sub _validate_actcode {
 # @return Two values: a reference to the user whose activation code has been send
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
+# FIXME: OVERHAUL
 sub _validate_resend {
     my $self   = shift;
     my $args   = {};
@@ -647,6 +649,7 @@ sub _validate_resend {
 # @return Two values: a reference to the user whose reset code has been send
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
+# FIXME: OVERHAUL
 sub _validate_recover {
     my $self   = shift;
     my $args   = {};
@@ -704,6 +707,7 @@ sub _validate_recover {
 # @return Two values: a reference to the user whose password has been reset
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
+# FIXME: OVERHAUL
 sub _validate_reset {
     my $self = shift;
     my $args   = {};
@@ -843,6 +847,7 @@ sub _generate_actcode_form {
 #
 # @param error  A string containing errors related to password changes, or undef.
 # @return An array of two values: the page title string, the code form
+# FIXME: OVERHAUL
 sub _generate_passchange_form {
     my $self    = shift;
     my $error   = shift;
@@ -876,6 +881,7 @@ sub _generate_passchange_form {
 #
 # @param error A string containing errors related to recovery, or undef.
 # @return An array of two values: the page title string, the code form
+# FIXME: OVERHAUL
 sub _generate_recover_form {
     my $self  = shift;
     my $error = shift;
@@ -895,6 +901,7 @@ sub _generate_recover_form {
 #
 # @param error A string containing errors related to resending, or undef.
 # @return An array of two values: the page title string, the code form
+# FIXME: OVERHAUL
 sub _generate_resend_form {
     my $self  = shift;
     my $error = shift;
@@ -960,6 +967,7 @@ sub _generate_loggedin {
 #
 # @return An array of three values: the page title string, the 'logged out' message, and
 #         a meta element to insert into the head element to redirect the user.
+# FIXME: OVERHAUL
 sub _generate_signedout {
     my $self = shift;
 
@@ -1032,6 +1040,7 @@ sub _generate_signedup {
 # sent to their email address.
 #
 # @return An array of two values: the page title string, the 'resent' message.
+# FIXME: OVERHAUL
 sub _generate_resent {
     my $self = shift;
 
@@ -1055,6 +1064,7 @@ sub _generate_resent {
 # sent to their email address.
 #
 # @return An array of two values: the page title string, the 'recover sent' message.
+# FIXME: OVERHAUL
 sub _generate_recover {
     my $self = shift;
 
@@ -1079,6 +1089,7 @@ sub _generate_recover {
 #
 # @param  error If set, display an error message rather than a 'completed' message.
 # @return An array of two values: the page title string, the 'resent' message.
+# FIXME: OVERHAUL
 sub _generate_reset {
     my $self  = shift;
     my $error = shift;
@@ -1123,17 +1134,6 @@ sub _build_login_check_response {
     my $self = shift;
 
     return { "login" => {"loggedin" => $self -> {"session"} -> anonymous_session() ? "no" : "yes" }};
-}
-
-
-## @method private $ _build_loginform_response(void)
-# Generate the HTML to send back in response to a loginform API request.
-#
-# @return The HTML to send back to the client.
-sub _build_loginform_response {
-    my $self = shift;
-
-    return $self -> {"template"} -> load_template("login/apiform.tem");
 }
 
 
@@ -1236,6 +1236,7 @@ sub _handle_activate {
 }
 
 
+# FIXME: OVERHAUL
 sub _handle_recover {
     my $self = shift;
 
@@ -1254,6 +1255,7 @@ sub _handle_recover {
 }
 
 
+# FIXME: OVERHAUL
 sub _handle_resend {
     my $self = shift;
 
@@ -1272,6 +1274,7 @@ sub _handle_resend {
 }
 
 
+# FIXME: OVERHAUL
 sub _handle_passchange {
     my $self = shift;
 
@@ -1388,6 +1391,7 @@ sub _dispatch_ui {
                                       doclink   => 'login');
 }
 
+# FIXME: OVERHAUL
 #        } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
 #
 #            my ($user, $args) = $self -> validate_reset();
@@ -1404,9 +1408,8 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("check")     { return $self -> api_response     ($self -> _build_login_check_response()); }
-            when("loginform") { return $self -> api_html_response($self -> _build_loginform_response()); }
-            when("login")     { return $self -> api_response     ($self -> _build_login_response()); }
+            when("check")     { return $self -> api_response($self -> _build_login_check_response()); }
+            when("login")     { return $self -> api_response($self -> _build_login_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
