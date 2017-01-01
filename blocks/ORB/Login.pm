@@ -417,8 +417,8 @@ sub _validate_signup {
 
     # Halt here if there are any problems.
     return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s" => $errors}), $args)
-        if($errors);
+                                                                            "%(errors)s" => $error}), $args)
+        if($error);
 
     # Is the response valid?
     return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
