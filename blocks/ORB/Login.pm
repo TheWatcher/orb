@@ -1327,47 +1327,18 @@ sub _handle_passchange {
 }
 
 
-# FIXME: OVERHAUL
-sub _handle_signout {
+## @method private @ _handle_signin()
+# Handle the process of showing the form they can enter their credentials into,
+# and processing submission from the form.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
+sub _handle_signin {
     my $self = shift;
 
-    # User must be logged in to log out
-    return $self -> _generate_not_loggedin()
-        if($self -> {"session"} -> anonymous_session());
-
-    # User is logged in, do the signout
-    $self -> log("signout", $self -> {"session"} -> get_session_userid());
-    if($self -> {"session"} -> delete_session()) {
-        return $self -> _generate_signedout();
-    } else {
-        return $self -> generate_errorbox($SessionHandler::errstr);
-    }
-}
-
-
-sub _handle_default {
-    my $self = shift;
-
-    # Is there already a logged-in session?
-    my $user = $self -> {"session"} -> get_user_byid();
-
-    # Pick up logged-in sessions, and either generate the password change form,
-    # or to the logged-in page
-    if($user && !$self -> {"session"} -> anonymous_session()) {
-        # Does the user need to change their password?
-        my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
-        if(!$passchange) {
-            $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
-
-            # No passchange needed, user is good
-            return $self -> _generate_loggedin();
-        } else {
-            $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-            return $self -> _generate_passchange_form();
-        }
-
-    # User is anonymous - do we have a login?
-    } elsif(defined($self -> {"cgi"} -> param("signin"))) {
+    # Has the signin form been submitted?
+    if(defined($self -> {"cgi"} -> param("signin"))) {
+        # Check the login
         my ($user, $args) = $self -> _validate_signin();
 
         # Do we have any errors? If so, send back the login form with them
@@ -1375,7 +1346,7 @@ sub _handle_default {
             $self -> log("login error", $user);
             return $self -> _generate_signin_form($user, $args);
 
-            # No errors, user is valid...
+        # No errors, user is valid...
         } else {
             # should the login be made persistent?
             my $persist = defined($self -> {"cgi"} -> param("persist")) &&
@@ -1408,6 +1379,53 @@ sub _handle_default {
     }
 
     return $self -> _generate_signin_form();
+}
+
+
+# FIXME: OVERHAUL
+sub _handle_signout {
+    my $self = shift;
+
+    # User must be logged in to log out
+    return $self -> _generate_not_loggedin()
+        if($self -> {"session"} -> anonymous_session());
+
+    # User is logged in, do the signout
+    $self -> log("signout", $self -> {"session"} -> get_session_userid());
+    if($self -> {"session"} -> delete_session()) {
+        return $self -> _generate_signedout();
+    } else {
+        return $self -> generate_errorbox($SessionHandler::errstr);
+    }
+}
+
+
+sub _handle_default {
+    my $self = shift;
+
+    # Is there already a logged-in session?
+    my $user = $self -> {"session"} -> get_user_byid();
+
+    # Pick up logged-in sessions, and either generate the password change form,
+    # or to the logged-in page
+    if($user && !$self -> {"session"} -> anonymous_session()) {
+
+        # Does the user need to change their password?
+        my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
+
+        if(!$passchange) {
+            $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
+
+            # No passchange needed, user is good
+            return $self -> _generate_loggedin();
+        } else {
+            $self -> {"session"} -> set_variable("passchange_reason", $passchange);
+            return $self -> _generate_passchange_form();
+        }
+    }
+
+    # Get here and its an anon session; delegate to the signin handler
+    return $self -> _handle_signin();
 }
 
 
