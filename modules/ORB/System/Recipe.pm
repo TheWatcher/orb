@@ -105,6 +105,8 @@ sub clear {
 # Create a new recipe in the system. The args hash can contain the following,
 # all fields are required unless indicated otherwise:
 #
+# -          `id`: (optional, avoid) Set the ID to create the recipe with.
+#                  This should generally not be specified unless doing edits.
 # -      `previd`: (optional) ID of the recipe this is an edit of. If specified,
 #                  the old recipe has its state set to 'edited', and the
 #                  metadata context of the new recipe is created as a child of
