@@ -160,7 +160,7 @@ sub _recover_email {
                                       "params"   => { "uid"       => $user -> {"user_id"},
                                                       "resetcode" => $actcode},
                                       "joinstr"  => "&",
-                                      "pathinfo" => [ "recover" ]);
+                                      "pathinfo" => [ "reset" ]);
 
     my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("LOGIN_RECOVER_SUBJECT"),
                                                         message => $self -> {"template"} -> load_template("login/email_recover.tem",
@@ -563,6 +563,81 @@ sub _validate_resend {
 }
 
 
+## @method private @ validate_recover()
+# Determine whether the email address the user entered is valid, and if so generate
+# an act code to start the reset process.
+#
+# @return Two values: a reference to the user whose reset code has been send
+#         on success, or an error message, and a reference to a hash containing
+#         the data entered by the user.
+sub _validate_recover {
+    my $self   = shift;
+    my $args   = {};
+    my $error;
+
+    # Get the recaptcha check out of the way first
+    # Pull the reCAPTCHA response code
+    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
+                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
+                                                                                         "minlen"     => 2,
+                                                                                         "formattest" => '^[-\w]+$',
+                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
+                                                                });
+
+    # Halt here if there are any problems.
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                            "%(errors)s" => $error}), $args)
+        if($error);
+
+    # Is the response valid?
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                            "%(errors)s"  => "{L_LOGIN_ERR_RECAPTCHA}"}), $args)
+        unless($self -> _validate_recaptcha($args -> {"recaptcha"}));
+
+    # Get the email address entered by the user
+    ($args -> {"email"}, $error) = $self -> validate_string("email", {"required"   => 1,
+                                                                      "nicename"   => "{L_LOGIN_RECOVER_EMAIL}",
+                                                                      "minlen"     => 2,
+                                                                      "maxlen"     => 256
+                                                            });
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => $error}), $args)
+        if($error);
+
+    # Does the email look remotely valid?
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => "{L_LOGIN_ERR_BADEMAIL}"}), $args)
+        if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
+
+    # Does the address correspond to an actual user?
+    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => "{L_LOGIN_ERR_BADUSER}"}), $args)
+        if(!$user);
+
+    # Users can not recover an inactive account - they need to get a new act code
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => "{L_LOGIN_ERR_NORECINACT}"}), $args)
+        if($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate") &&
+           !$self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
+
+    # Does the user's authmethod support activation anyway?
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message")}), $args)
+        if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover"));
+
+    my $newcode = $self -> {"session"} -> {"auth"} -> generate_actcode($user -> {"username"});
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
+        if(!$newcode);
+
+    # Get here and the user's account has been reset
+    $self -> _recover_email($user, $newcode);
+
+    return($user, $args);
+}
+
+
 ## @method private @ validate_passchange()
 # Determine whether the password change request made by the user is valid. If the
 # password change is valid (passwords match, pass policy, and the old password is
@@ -663,63 +738,6 @@ sub _validate_passchange {
 }
 
 
-## @method private @ validate_recover()
-# Determine whether the email address the user entered is valid, and if so generate
-# an act code to start the reset process.
-#
-# @return Two values: a reference to the user whose reset code has been send
-#         on success, or an error message, and a reference to a hash containing
-#         the data entered by the user.
-# FIXME: OVERHAUL
-sub _validate_recover {
-    my $self   = shift;
-    my $args   = {};
-    my $error;
-
-    # Get the email address entered by the user
-    ($args -> {"email"}, $error) = $self -> validate_string("email", {"required"   => 1,
-                                                                      "nicename"   => "{L_LOGIN_RECOVER_EMAIL}",
-                                                                      "minlen"     => 2,
-                                                                      "maxlen"     => 256
-                                                            });
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => $error}), $args)
-        if($error);
-
-    # Does the email look remotely valid?
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => "{L_LOGIN_ERR_BADEMAIL}"}), $args)
-        if($args -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
-
-    # Does the address correspond to an actual user?
-    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($args -> {"email"});
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => "{L_LOGIN_ERR_BADUSER}"}), $args)
-        if(!$user);
-
-    # Users can not recover an inactive account - they need to get a new act code
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => "{L_LOGIN_ERR_NORECINACT}"}), $args)
-        if($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate") &&
-           !$self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
-
-    # Does the user's authmethod support activation anyway?
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message")}), $args)
-        if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover"));
-
-    my $newcode = $self -> {"session"} -> {"auth"} -> generate_actcode($user -> {"username"});
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> {"app"} -> errstr()}), $args)
-        if(!$newcode);
-
-    # Get here and the user's account has been reset
-    $self -> recover_email($user, $newcode);
-
-    return($user, $args);
-}
-
-
 ## @method private @ validate_reset()
 # Pull the userid and activation code out of the submitted data, and determine
 # whether they are valid (and that the user's authmethod allows for resets). If
@@ -772,7 +790,7 @@ sub _validate_reset {
         if(!$newpass);
 
     # Get here and the user's account has been reset
-    $self -> reset_email($user, $newpass);
+    $self -> _reset_email($user, $newpass);
 
     return($user, $args);
 }
@@ -856,8 +874,8 @@ sub _generate_actcode_form {
 
     return ("{L_LOGIN_TITLE}",
             $self -> {"template"} -> load_template("login/form_activate.tem", {"%(error)s"      => $error,
-                                                                               "%(url-target)s" => $self -> build_url("block" => "login"),
-                                                                               "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ]),}),
+                                                                               "%(url-target)s" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
+                                                                               "%(url-resend)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend"   ]),}),
             $self -> {"template"} -> load_template("login/extrahead.tem"),
             $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
@@ -880,7 +898,32 @@ sub _generate_resend_form {
     return ("{L_LOGIN_RESEND_TITLE}",
             $self -> {"template"} -> load_template("login/form_resend.tem", {"%(error)s"      => $error,
                                                                              "%(sitekey)s"    => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
-                                                                             "%(url-target)s" => $self -> build_url("block" => "login")}),
+                                                                             "%(url-target)s" => $self -> build_url("block" => "login", "pathinfo" => [ "resend" ])
+                                                   }),
+            $self -> {"template"} -> load_template("login/signup_extrahead.tem"),
+            $self -> {"template"} -> load_template("login/extrajs.tem"));
+}
+
+
+## @method private @ generate_recover_form($error)
+# Generate a form through which the user may recover their account details.
+#
+# @param error A string containing errors related to recovery, or undef.
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
+sub _generate_recover_form {
+    my $self  = shift;
+    my $error = shift;
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
+        if($error);
+
+    return ("{L_LOGIN_RECOVER_TITLE}",
+            $self -> {"template"} -> load_template("login/form_recover.tem", {"%(error)s"      => $error,
+                                                                              "%(sitekey)s"    => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
+                                                                              "%(url-target)s" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ])
+                                                   }),
             $self -> {"template"} -> load_template("login/signup_extrahead.tem"),
             $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
@@ -919,27 +962,6 @@ sub _generate_passchange_form {
                                                                                 "%(policy)s" => $policy,
                                                                                 "%(reason)s" => $reasons -> {$reason},
                                                                                 "%(rid)s"    => $reason } ));
-}
-
-
-## @method private @ generate_recover_form($error)
-# Generate a form through which the user may recover their account details.
-#
-# @param error A string containing errors related to recovery, or undef.
-# @return An array containing the page title, content, extra header data, and
-#         extra javascript content.
-# FIXME: OVERHAUL
-sub _generate_recover_form {
-    my $self  = shift;
-    my $error = shift;
-
-    # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
-        if($error);
-
-    return ("{L_LOGIN_TITLE}",
-            $self -> {"template"} -> load_template("login/recover_form.tem", {"%(error)s"  => $error,
-                                                                              "%(target)s" => $self -> build_url("block" => "login")}));
 }
 
 
@@ -1079,7 +1101,7 @@ sub _generate_resent {
                                  summary => "{L_LOGIN_RESEND_SUMMARY}",
                                  message => "{L_LOGIN_RESEND_MESSAGE}",
                                  buttons => [ {"message" => "{L_LOGIN_ACTIVATE}",
-                                               "colour"  => "blue",
+                                               "colour"  => "standard",
                                                "href"    => $url} ]));
 }
 
@@ -1089,22 +1111,19 @@ sub _generate_resent {
 # sent to their email address.
 #
 # @return An array of two values: the page title string, the 'recover sent' message.
-# FIXME: OVERHAUL
 sub _generate_recover {
     my $self = shift;
 
     my $url = $self -> build_url("block" => "login", "pathinfo" => []);
 
     return ("{L_LOGIN_RECOVER_DONETITLE}",
-            $self -> message_box("{L_LOGIN_RECOVER_DONETITLE}",
-                                 "security",
-                                 "{L_LOGIN_RECOVER_SUMMARY}",
-                                 "{L_LOGIN_RECOVER_MESSAGE}",
-                                 undef,
-                                 "logincore",
-                                 [ {"message" => "{L_LOGIN_LOGIN}",
-                                    "colour"  => "blue",
-                                    "action"  => "location.href='$url'"} ]));
+            $self -> message_box(title   => "{L_LOGIN_RECOVER_DONETITLE}",
+                                 type    => "account",
+                                 summary => "{L_LOGIN_RECOVER_SUMMARY}",
+                                 message => "{L_LOGIN_RECOVER_MESSAGE}",
+                                 buttons => [ {"message" => "{L_LOGIN_LOGIN}",
+                                               "colour"  => "standard",
+                                               "href"    => $url} ]));
 }
 
 
