@@ -54,12 +54,17 @@ sub block_display {
                                                 forcessl => 1),
                  "signout" => $self -> build_url(block => "login",
                                                 fullurl  => 1,
-                                                pathinfo => [ "logout" ],
+                                                pathinfo => [ "signout" ],
                                                 params   => {},
                                                 forcessl => 1),
                  "signup"  => $self -> build_url(block => "login",
                                                  fullurl  => 1,
                                                  pathinfo => [ "signup" ],
+                                                 params   => {},
+                                                 forcessl => 1),
+                 "setpass" => $self -> build_url(block => "login",
+                                                 fullurl  => 1,
+                                                 pathinfo => [ "passchange" ],
                                                  params   => {},
                                                  forcessl => 1),
                  "front"   => $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
@@ -81,6 +86,7 @@ sub block_display {
                                                                 "%(username)s"    => $user -> {"username"},
                                                                 "%(gravhash)s"    => $user -> {"gravatar_hash"},
                                                                 "%(url-signout)s" => $urls -> {"signout"},
+                                                                "%(url-setpass)s" => $urls -> {"setpass"},
                                                               });
 
     } else {

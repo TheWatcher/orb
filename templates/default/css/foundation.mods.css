@@ -21,3 +21,12 @@ div.top-bar-title {
     padding-top: 0.5rem;
     font-weight: bold;
 }
+
+/* fix padding for menu text with image */
+li.image {
+    padding: 0 0 0 0.25rem;
+}
+
+.menu > li > a.nopadding {
+    padding: 0;
+}
