@@ -560,20 +560,31 @@ sub _add_ingredients {
             my $ingid = $self -> {"entities"} -> {"ingredients"} -> get_id($ingred -> {"name"})
                 or return $self -> self_error("Unable to get ingreditent ID for '".$ingred -> {"name"}."': ".$self -> {"entities"} -> {"ingredients"} -> errstr());
 
-            my $unitid = $self -> {"entities"} -> {"units"} -> get_id($ingred -> {"units"})
-                or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"entities"} -> {"units"} -> errstr());
+            # Increase the entity refcounts
+            $self -> {"entities"} -> {"ingredients"} -> increase_refcount($ingid)
+                or return $self -> self_error("Ingredient refcount error: ".$self -> {"entities"} -> {"ingredients"} -> errstr());
 
-            my $prepid = $self -> {"entities"} -> {"prep"} -> get_id($ingred -> {"prep"})
-                or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
+            my ($unitid, $prepid);
+
+            if($ingred -> {"units"}) {
+                $unitid = $self -> {"entities"} -> {"units"} -> get_id($ingred -> {"units"})
+                    or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"entities"} -> {"units"} -> errstr());
+
+                $self -> {"entities"} -> {"units"} -> increase_refcount($unitid)
+                    or return $self -> self_error("Unit refcount error: ".$self -> {"entities"} -> {"ingredients"} -> errstr());
+            }
+
+            if($ingred -> {"prep"}) {
+                $prepid = $self -> {"entities"} -> {"prep"} -> get_id($ingred -> {"prep"})
+                    or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
+
+                $self -> {"entities"} -> {"prep"} -> increase_refcount($prepid)
+                    or return $self -> self_error("Prep refcount error: ".$self -> {"entities"} -> {"ingredients"} -> errstr());
+            }
 
             # If we have an ID we can add the ingredient.
             $addh -> execute($recipeid, $position, $unitid, $prepid, $ingid, $ingred -> {"quantity"}, $ingred -> {"notes"}, undef)
                 or return $self -> self_error("Unable to add ingredient '".$ingred -> {"name"}."' to recipe '$recipeid': ".$self -> {"dbh"} -> errstr());
-
-            # And increase the entity refcounts
-            $self -> {"entities"} -> {"ingredients"} -> increase_refcount($ingid);
-            $self -> {"entities"} -> {"units"}       -> increase_refcount($unitid);
-            $self -> {"entities"} -> {"prep"}        -> increase_refcount($prepid);
         }
 
         ++$position;
