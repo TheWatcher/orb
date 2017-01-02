@@ -258,7 +258,7 @@ sub find_ids {
         or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
 
     # And return the list of matches
-    return $entityh -> fwetchall_arrayref({});
+    return $entityh -> fetchall_arrayref({});
 }
 
 
