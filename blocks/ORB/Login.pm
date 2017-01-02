@@ -1401,24 +1401,14 @@ sub _handle_signin {
 }
 
 
-# FIXME: OVERHAUL
-sub _handle_signout {
-    my $self = shift;
-
-    # User must be logged in to log out
-    return $self -> _generate_not_loggedin()
-        if($self -> {"session"} -> anonymous_session());
-
-    # User is logged in, do the signout
-    $self -> log("signout", $self -> {"session"} -> get_session_userid());
-    if($self -> {"session"} -> delete_session()) {
-        return $self -> _generate_signedout();
-    } else {
-        return $self -> generate_errorbox($SessionHandler::errstr);
-    }
-}
-
-
+## @method private @ _handle_default()
+# Handle the situation where no specific login function has been selected
+# by the user. This will pick up signed-in users and either redirect them
+# or make them change their password, and if there's no logged in user
+# this delegates to _handle_signin() to show the signin form.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
 sub _handle_default {
     my $self = shift;
 
@@ -1448,6 +1438,30 @@ sub _handle_default {
 }
 
 
+# FIXME: OVERHAUL
+sub _handle_signout {
+    my $self = shift;
+
+    # User must be logged in to log out
+    return $self -> _generate_not_loggedin()
+        if($self -> {"session"} -> anonymous_session());
+
+    # User is logged in, do the signout
+    $self -> log("signout", $self -> {"session"} -> get_session_userid());
+    if($self -> {"session"} -> delete_session()) {
+        return $self -> _generate_signedout();
+    } else {
+        return $self -> generate_errorbox($SessionHandler::errstr);
+    }
+}
+
+
+## @method private $ _dispatch_ui()
+# Implements the core behaviour dispatcher for non-api functions. This will
+# inspect the state of the pathinfo and invoke the appropriate handler
+# function to generate content for the user.
+#
+# @return A string containing the page HTML.
 sub _dispatch_ui {
     my $self = shift;
 
