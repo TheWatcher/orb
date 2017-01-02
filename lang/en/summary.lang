@@ -1,0 +1,8 @@
+SUMMARY_TITLE   = Summaries
+
+SUMMARY_NAME    = Name
+SUMMARY_TYPE    = Type
+
+SUMMARY_ADDED   = Recently Added
+SUMMARY_VIEWED  = Recently Viewed
+SUMMARY_UPDATED = Recently Updated

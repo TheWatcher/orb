@@ -1,0 +1,44 @@
+                    <div class="large-4 columns">
+                        <h4>{L_SUMMARY_ADDED}</h4>
+                        <table>
+    	                    <thead>
+	    	                    <tr>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
+		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+	    	                    </tr>
+		                    </thead>
+		                    <tbody>
+%(added)s
+		                    </tbody>
+	                    </table>
+                    </div>
+
+                    <div class="large-4 columns">
+                        <h4>{L_SUMMARY_VIEWED}</h4>
+                        <table>
+    	                    <thead>
+	    	                    <tr>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
+		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+	    	                    </tr>
+		                    </thead>
+		                    <tbody>
+%(viewed)s
+		                    </tbody>
+	                    </table>
+                    </div>
+
+                    <div class="large-4 columns">
+                        <h4>{L_SUMMARY_UPDATED}</h4>
+                        <table>
+    	                    <thead>
+	    	                    <tr>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
+		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+	    	                    </tr>
+		                    </thead>
+		                    <tbody>
+%(updated)s
+		                    </tbody>
+	                    </table>
+                    </div>
