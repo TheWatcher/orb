@@ -396,6 +396,8 @@ sub load_recipe_relations {
 #           may be "all" or "any", with corresponding behaviour.
 # - `limit`: how many recipies may be returned by the find()
 # - `offset`: offset from the start of the query results.
+# - `order`: optional ordering of results. Allowed values are 'added', 'updated',
+#            'viewed', or 'name' (the default).
 # - `searchmode`: This may be "all", in which only recipes that match all the
 #           specified criteria are returned, or "any" in which case
 #           recipes that match any of the criteria will be returned. This
@@ -427,11 +429,14 @@ sub find {
     $args -> {"tagids"} = $self -> _hashlist_to_list($tags, "id");
 
     # Fix up default matching modes
-    $args -> {"ingredmatch"} = "all" unless($args -> {"ingredmatch"} eq "any");
-    $args -> {"tagmatch"}    = "all" unless($args -> {"tagmatch"} eq "any");
+    $args -> {"ingredmatch"} = "all" unless($args -> {"ingredmatch"} && $args -> {"ingredmatch"} eq "any");
+    $args -> {"tagmatch"}    = "all" unless($args -> {"tagmatch"}    && $args -> {"tagmatch"} eq "any");
+    $args -> {"searchmode"}  = "all" unless($args -> {"searchmode"}  && $args -> {"searchmode"} eq "any");
 
     # Now start the process of building the query
-    my (@params, $joins, @where) = ((), "", ());
+    my @params = ();
+    my $joins  = "";
+    my @where  = ();
 
     # Matching all ingredients or tags requires multiple inner joins
     $joins .= $self -> _join_fragment($args -> {"ingredids"}, $self -> {"entities"} -> {"ingredients"} -> {"entity_table"}, \@params)
@@ -473,7 +478,7 @@ sub find {
     }
 
     # Squish all the where conditions into a string
-    my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where);
+    my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where) || "1";
 
     # Construct the limit term when limit (and optionally offset) are
     # specified by the caller
@@ -488,22 +493,25 @@ sub find {
 
     my $order;
     given($args -> {"order"}) {
-        when("added")  { $order = "`r`.`created` DESC, `r`.`name` ASC"; }
-        when("viewed") { $order = "`r`.`viewed` DESC, `r`.`name` ASC"; }
+        when("added")   { $order = "`r`.`created` DESC, `r`.`name` ASC"; }
+        when("updated") { $order = "`r`.`updated` DESC, `r`.`name` ASC"; }
+        when("viewed")  { $order = "`r`.`viewed` DESC, `r`.`name` ASC"; }
 
         default { $order = "`r`.`name` ASC, `r`.`created` DESC"; }
     }
 
     # Build and run the search query
-    my $query = "SELECT DISTINCT `r`.*, `s`.name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
+    my $query = "SELECT DISTINCT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
                  INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s` ON `s`.`id` = `r`.`status_id`
                  INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t` ON `t`.`id` = `r`.`type_id`
-                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u` ON `u`.`user_id` = `r`.`creator_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `c` ON `c`.`user_id` = `r`.`creator_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `e` ON `e`.`user_id` = `r`.`updater_id`
                  $joins
                  WHERE $wherecond
                  ORDER BY $order
                  $limit";
+
     my $search = $self -> {"dbh"} -> prepare($query);
     $search -> execute(@params)
         or return $self -> self_error("Unable ot perform recipe search: ".$self -> {"dbh"} -> errstr);
