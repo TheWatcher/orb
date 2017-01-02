@@ -31,6 +31,44 @@ use JSON;
 use v5.14;
 
 # ============================================================================
+#  Utility/support functions
+
+## @method private $ _build_password_policy()
+# Build a string describing the password policy for the current user. This
+# interrogates the user's AuthMethod to determine the password policy in place
+# for the user (if any), and generates a string describing it in a format
+# suitable to present to users.
+#
+# @return A string containing the password policy enforced for the logged-in
+#         user.
+sub _build_password_policy {
+    my $self     = shift;
+
+    # Anonymous user can have no policy
+    return '{L_LOGIN_PASSCHANGE_ERRNOUSER}'
+        if($self -> {"session"} -> anonymous_session());
+
+    my $user = $self -> {"session"} -> get_user_byid()
+        or return '{L_LOGIN_PASSCHANGE_ERRNOUSER}';
+
+    # Fetch the policy, and give up if there isn't one.
+    my $policy = $self -> {"session"} -> {"auth"} -> get_policy($user -> {"username"})
+        or return '{L_LOGIN_POLICY_NONE}';
+
+    my $policystr = "";
+    foreach my $name (@{$policy -> {"policy_order"}}) {
+        next if(!$policy -> {$name});
+
+        $policystr .= $self -> {"template"} -> load_template("login/policy.tem",
+                                                             { "%(policy)s" => "{L_LOGIN_".uc($name)."}",
+                                                               "%(value)s"  => $policy -> {$name} });
+    }
+
+    return $policystr;
+}
+
+
+# ============================================================================
 #  Emailer functions
 
 ## @method private $ _signup_email($user, $password)
@@ -306,17 +344,26 @@ sub _validate_signin {
 }
 
 
-## @method private $ _validate_recaptcha($response)
-# Given a response code submitted as part of an operation by the user, ask the
+## @method private $ _validate_recaptcha()
+# Pull the reCAPTCHA response string from the posted data, and ask the
 # google reCAPTCHA validation service to check whether the response is valid.
 #
-# @param response The reCAPTCHA response code submitted by the user
-# @return true if the code is valid, false if is not, undef on error.
+# @return true if the code is valid, undef if not - examine $self -> errstr()
+#         for the reason why in this case
 sub _validate_recaptcha {
     my $self     = shift;
-    my $response = shift;
 
     $self -> clear_error();
+
+    # Pull the reCAPTCHA response code
+    my ($response, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
+                                                                               "nicename"   => "{L_LOGIN_RECAPTCHA}",
+                                                                               "minlen"     => 2,
+                                                                               "formattest" => '^[-\w]+$',
+                                                                               "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
+                                                                });
+    return $self -> self_error($error)
+        if($error);
 
     my $ua = LWP::UserAgent -> new();
 
@@ -341,7 +388,7 @@ sub _validate_recaptcha {
         return $self -> self_error("HTTP problem: ".$resp -> status_line());
     }
 
-    return 0;
+    return $self -> self_error("{L_LOGIN_ERR_RECAPTCHA}");
 }
 
 
@@ -407,23 +454,10 @@ sub _validate_signup {
             if($user);
     }
 
-    # Pull the reCAPTCHA response code
-    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
-                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
-                                                                                         "minlen"     => 2,
-                                                                                         "formattest" => '^[-\w]+$',
-                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
-                                                                });
-
-    # Halt here if there are any problems.
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s" => $error}), $args)
-        if($error);
-
-    # Is the response valid?
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s"  => "{L_LOGIN_ERR_RECAPTCHA}"}), $args)
-        unless($self -> _validate_recaptcha($args -> {"recaptcha"}));
+    # Is the reCAPTCHA response valid?
+    return ($self -> {"template"} -> load_template("error/error_list.tem", { "%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
+                                                                             "%(errors)s"  => $self -> errstr() }), $args)
+        unless($self -> _validate_recaptcha());
 
 
     # Get here an the user's details are okay, register the new user.
@@ -498,23 +532,9 @@ sub _validate_resend {
     my $error;
 
     # Get the recaptcha check out of the way first
-    # Pull the reCAPTCHA response code
-    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
-                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
-                                                                                         "minlen"     => 2,
-                                                                                         "formattest" => '^[-\w]+$',
-                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
-                                                                });
-
-    # Halt here if there are any problems.
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s" => $error}), $args)
-        if($error);
-
-    # Is the response valid?
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s"  => "{L_LOGIN_ERR_RECAPTCHA}"}), $args)
-        unless($self -> _validate_recaptcha($args -> {"recaptcha"}));
+    return ($self -> {"template"} -> load_template("error/error_list.tem", { "%(message)s" => "{L_LOGIN_RESEND_FAILED}",
+                                                                             "%(errors)s"  => $self -> errstr() }), $args)
+        unless($self -> _validate_recaptcha());
 
 
     # Get the email address entered by the user
@@ -576,23 +596,9 @@ sub _validate_recover {
     my $error;
 
     # Get the recaptcha check out of the way first
-    # Pull the reCAPTCHA response code
-    ($args -> {"recaptcha"}, $error) = $self -> validate_string("g-recaptcha-response", {"required"   => 1,
-                                                                                         "nicename"   => "{L_LOGIN_RECAPTCHA}",
-                                                                                         "minlen"     => 2,
-                                                                                         "formattest" => '^[-\w]+$',
-                                                                                         "formatdesc" => "{L_LOGIN_ERR_BADRECAPTCHA}"
-                                                                });
-
-    # Halt here if there are any problems.
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s" => $error}), $args)
-        if($error);
-
-    # Is the response valid?
-    return ($self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s" => "{L_LOGIN_ERR_REGFAILED}",
-                                                                            "%(errors)s"  => "{L_LOGIN_ERR_RECAPTCHA}"}), $args)
-        unless($self -> _validate_recaptcha($args -> {"recaptcha"}));
+    return ($self -> {"template"} -> load_template("error/error_list.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                             "%(errors)s"  => $self -> errstr() }), $args)
+        unless($self -> _validate_recaptcha());
 
     # Get the email address entered by the user
     ($args -> {"email"}, $error) = $self -> validate_string("email", {"required"   => 1,
@@ -638,6 +644,67 @@ sub _validate_recover {
 }
 
 
+## @method private @ validate_reset()
+# Pull the userid and activation code out of the submitted data, and determine
+# whether they are valid (and that the user's authmethod allows for resets). If
+# so, reset the user's password and send and email to them with the new details.
+#
+# @return Two values: a reference to the user whose password has been reset
+#         on success, or an error message, and a reference to a hash containing
+#         the data entered by the user.
+sub _validate_reset {
+    my $self = shift;
+    my $args   = {};
+    my $error;
+
+    # Obtain the userid from the query string, if possible.
+    ($args -> {"uid"}, $error) = $self -> validate_numeric("uid", { "required" => 1,
+                                                                    "nidename" => "{L_LOGIN_UID}",
+                                                                    "intonly"  => 1,
+                                                                    "min"      => 2});
+    return ("{L_LOGIN_ERR_NOUID}", $args)
+        if($error);
+
+    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byid($args -> {"uid"})
+        or return ("{L_LOGIN_ERR_BADUID}", $args);
+
+    # Get the reset code, should be a 64 character alphanumeric string
+    ($args -> {"resetcode"}, $error) = $self -> validate_string("resetcode", {"required"   => 1,
+                                                                              "nicename"   => "{L_LOGIN_RESET_CODE}",
+                                                                              "minlen"     => 64,
+                                                                              "maxlen"     => 64,
+                                                                              "formattest" => '^[a-zA-Z0-9]+$',
+                                                                              "formatdesc" => "{L_LOGIN_ERR_BADRECCHAR}"});
+    return ($error, $args) if($error);
+
+    # Does the reset code match the one set for the user?
+    return ("{L_LOGIN_ERR_BADRECCODE}", $args)
+        unless($user -> {"act_code"} && $user -> {"act_code"} eq $args -> {"resetcode"});
+
+    # Users can not recover an inactive account - they need to get a new act code
+    return ("{L_LOGIN_ERR_NORECINACT}", $args)
+        if($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate") &&
+           !$self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
+
+    # double-check the authmethod supports resets, just to be on the safe side (the code should never
+    # get here if it does not, but better safe than sorry)
+    return ($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message"), $args)
+        if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover"));
+
+    # Okay, user is valid, authcode checks out, auth module supports resets, generate a new
+    # password and send it
+    my $newpass  = $self -> {"session"} -> {"auth"} -> reset_password($user -> {"username"});
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
+                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> errstr()}), $args)
+        if(!$newpass);
+
+    # Get here and the user's account has been reset
+    $self -> _reset_email($user, $newpass);
+
+    return($user, $args);
+}
+
+
 ## @method private @ validate_passchange()
 # Determine whether the password change request made by the user is valid. If the
 # password change is valid (passwords match, pass policy, and the old password is
@@ -646,12 +713,16 @@ sub _validate_recover {
 # @return An array of two values: A reference to the user's data on success,
 #         or an error string if the change failed, and a reference to a hash of
 #         arguments that passed validation.
-# FIXME: OVERHAUL
 sub _validate_passchange {
     my $self   = shift;
     my $error  = "";
     my $errors = "";
     my $args   = {};
+
+    # Get the recaptcha check out of the way first
+    return ($self -> {"template"} -> load_template("error/error_list.tem", { "%(message)s" => "{L_LOGIN_PASSCHANGE_FAILED}",
+                                                                             "%(errors)s"  => $self -> errstr() }), $args)
+        unless($self -> _validate_recaptcha());
 
     # Need to get a logged-in user before anything else is done
     my $user = $self -> {"session"} -> get_user_byid();
@@ -735,67 +806,6 @@ sub _validate_passchange {
     $self -> {"session"} -> set_variable("passchange_reason", undef);
 
     return ($user, $args);
-}
-
-
-## @method private @ validate_reset()
-# Pull the userid and activation code out of the submitted data, and determine
-# whether they are valid (and that the user's authmethod allows for resets). If
-# so, reset the user's password and send and email to them with the new details.
-#
-# @return Two values: a reference to the user whose password has been reset
-#         on success, or an error message, and a reference to a hash containing
-#         the data entered by the user.
-sub _validate_reset {
-    my $self = shift;
-    my $args   = {};
-    my $error;
-
-    # Obtain the userid from the query string, if possible.
-    ($args -> {"uid"}, $error) = $self -> validate_numeric("uid", { "required" => 1,
-                                                                    "nidename" => "{L_LOGIN_UID}",
-                                                                    "intonly"  => 1,
-                                                                    "min"      => 2});
-    return ("{L_LOGIN_ERR_NOUID}", $args)
-        if($error);
-
-    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byid($args -> {"uid"})
-        or return ("{L_LOGIN_ERR_BADUID}", $args);
-
-    # Get the reset code, should be a 64 character alphanumeric string
-    ($args -> {"resetcode"}, $error) = $self -> validate_string("resetcode", {"required"   => 1,
-                                                                              "nicename"   => "{L_LOGIN_RESET_CODE}",
-                                                                              "minlen"     => 64,
-                                                                              "maxlen"     => 64,
-                                                                              "formattest" => '^[a-zA-Z0-9]+$',
-                                                                              "formatdesc" => "{L_LOGIN_ERR_BADRECCHAR}"});
-    return ($error, $args) if($error);
-
-    # Does the reset code match the one set for the user?
-    return ("{L_LOGIN_ERR_BADRECCODE}", $args)
-        unless($user -> {"act_code"} && $user -> {"act_code"} eq $args -> {"resetcode"});
-
-    # Users can not recover an inactive account - they need to get a new act code
-    return ("{L_LOGIN_ERR_NORECINACT}", $args)
-        if($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "activate") &&
-           !$self -> {"session"} -> {"auth"} -> activated($user -> {"username"}));
-
-    # double-check the authmethod supports resets, just to be on the safe side (the code should never
-    # get here if it does not, but better safe than sorry)
-    return ($self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover_message"), $args)
-        if(!$self -> {"session"} -> {"auth"} -> capabilities($user -> {"username"}, "recover"));
-
-    # Okay, user is valid, authcode checks out, auth module supports resets, generate a new
-    # password and send it
-    my $newpass  = $self -> {"session"} -> {"auth"} -> reset_password($user -> {"username"});
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_RECOVER_FAILED}",
-                                                                        "%(reason)s"  => $self -> {"session"} -> {"auth"} -> errstr()}), $args)
-        if(!$newpass);
-
-    # Get here and the user's account has been reset
-    $self -> _reset_email($user, $newpass);
-
-    return($user, $args);
 }
 
 
@@ -939,39 +949,45 @@ sub _generate_recover_form {
 # @param error  A string containing errors related to password changes, or undef.
 # @return An array containing the page title, content, extra header data, and
 #         extra javascript content.
-# FIXME: OVERHAUL
 sub _generate_passchange_form {
     my $self    = shift;
     my $error   = shift;
-    my $reasons = { 'temporary' => "{L_LOGIN_FORCECHANGE_TEMP}",
-                    'expired'   => "{L_LOGIN_FORCECHANGE_OLD}", };
+    my $reasons = {
+        'temporary' => "{L_LOGIN_PASSCHANGE_TEMP}",
+        'expired'   => "{L_LOGIN_PASSCHANGE_OLD}",
+        'manual'    => "{L_LOGIN_PASSCHANGE_MANUAL}"
+    };
 
     # convert the password policy to a string
-    my $policy = $self -> build_password_policy("login/policy.tem") || "{L_LOGIN_POLICY_NONE}";
+    my $policy = $self -> _build_password_policy();
 
     # Reason should be in the 'passchange_reason' session variable.
-    my $reason = $self -> {"session"} -> get_variable("passchange_reason", "temporary");
+    my $reason = $self -> {"session"} -> get_variable("passchange_reason", "manual");
 
     # Force a sane reason
-    $reason = 'temporary' unless($reason && $reasons -> {$reason});
+    $reason = 'manual' unless($reason && $reasons -> {$reason});
 
     # Wrap the error message in a message box if we have one.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"%(message)s" => $error})
         if($error);
 
-    return ("{L_LOGIN_TITLE}",
-            $self -> {"template"} -> load_template("login/force_password.tem", {"%(error)s"  => $error,
-                                                                                "%(target)s" => $self -> build_url("block" => "login"),
-                                                                                "%(policy)s" => $policy,
-                                                                                "%(reason)s" => $reasons -> {$reason},
-                                                                                "%(rid)s"    => $reason } ));
+    return ("{L_LOGIN_PASSCHANGE_TITLE}",
+            $self -> {"template"} -> load_template("login/form_passchange.tem",
+                                                   { "%(error)s"      => $error,
+                                                     "%(sitekey)s"    => $self -> {"settings"} -> {"config"} -> {"Login:recaptcha_sitekey"},
+                                                     "%(url-target)s" => $self -> build_url(block => "login", pathinfo => [ "passchange" ]),
+                                                     "%(policy)s"     => $policy,
+                                                     "%(reason)s"     => $reasons -> {$reason},
+                                                     "%(rid)s"        => $reason } ),
+            $self -> {"template"} -> load_template("login/signup_extrahead.tem"),
+            $self -> {"template"} -> load_template("login/extrajs.tem"));
 }
 
 
 # ============================================================================
 #  Response generators
 
-## @method private @ generate_loggedin()
+## @method private @ _generate_loggedin()
 # Generate the contents of a page telling the user that they have successfully logged in.
 #
 # @return An array of two values: the page title string, and the 'logged in' message.
@@ -1013,7 +1029,7 @@ sub _generate_loggedin {
 }
 
 
-## @method private @ generate_signedout()
+## @method private @ _generate_signedout()
 # Generate the contents of a page telling the user that they have successfully logged out.
 #
 # @return An array of two values: the page title string, and the 'logged out' message
@@ -1036,7 +1052,7 @@ sub _generate_signedout {
 }
 
 
-## @method private @ generate_activated($user)
+## @method private @ _generate_activated($user)
 # Generate the contents of a page telling the user that they have successfully activated
 # their account.
 #
@@ -1059,7 +1075,7 @@ sub _generate_activated {
 }
 
 
-## @method private @ generate_signedup()
+## @method private @ _generate_signedup()
 # Generate the contents of a page telling the user that they have successfully created an
 # inactive account.
 #
@@ -1081,7 +1097,7 @@ sub _generate_signedup {
 }
 
 
-## @method private @ generate_resent()
+## @method private @ _generate_resent()
 # Generate the contents of a page telling the user that a new activation code has been
 # sent to their email address.
 #
@@ -1103,7 +1119,7 @@ sub _generate_resent {
 }
 
 
-## @method private @ generate_recover()
+## @method private @ _generate_recover()
 # Generate the contents of a page telling the user that a new password has been
 # sent to their email address.
 #
@@ -1124,7 +1140,7 @@ sub _generate_recover {
 }
 
 
-## @method private @ generate_reset()
+## @method private @ _generate_reset()
 # Generate the contents of a page telling the user that a new password has been
 # sent to their email address.
 #
@@ -1155,6 +1171,28 @@ sub _generate_reset {
                                                     "colour"  => "blue",
                                                     "href"    => $url } ]));
     }
+}
+
+
+## @method private @ _generate_passchanged()
+# Generate the contents of a page telling the user that they have successfully created an
+# inactive account.
+#
+# @return An array of two values: the page title string, the 'registered' message.
+sub _generate_passchanged {
+    my $self = shift;
+
+    my $url = $self -> build_url(block    => "login",
+                                 pathinfo => [ ]);
+
+    return ("{L_LOGIN_PASSCHANGE_DONETITLE}",
+            $self -> message_box(title   => "{L_LOGIN_PASSCHANGE_DONETITLE}",
+                                 type    => "account",
+                                 summary => "{L_LOGIN_PASSCHANGE_SUMMARY}",
+                                 message => "{L_LOGIN_PASSCHANGE_MESSAGE}",
+                                 buttons => [ {"message" => "{L_SITE_CONTINUE}",
+                                               "colour"  => "standard",
+                                               "href"    => $url} ]));
 }
 
 
@@ -1338,23 +1376,28 @@ sub _handle_reset {
 }
 
 
-# FIXME: OVERHAUL
+## @method private @ _handle_passchange()
+# Handle the process of showing the form they can change their password
+# through, and processing submission from the form.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
 sub _handle_passchange {
     my $self = shift;
 
     if(defined($self -> {"cgi"} -> param("changepass"))) {
-        # Check the password is valid-
-        my ($user, $args) = $self -> validate_passchange();
+        # Check the password form is valid
+        my ($user, $args) = $self -> _validate_passchange();
 
         # Change failed, send back the change form
         if(!ref($user)) {
             $self -> log("passchange error", $user);
             return $self -> _generate_passchange_form($user);
 
-            # Change done, send back the loggedin page
+        # Change done, send back the loggedin page
         } else {
             $self -> log("password updated", $user);
-            return $self -> _generate_loggedin();
+            return $self -> _generate_passchanged();
         }
     }
 

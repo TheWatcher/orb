@@ -128,10 +128,11 @@ LOGIN_RESEND_SUMMARY    = Resend successful!
 LOGIN_RESEND_MESSAGE    = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} activation code' and follow the instructions it contains to activate your account.
 
 # Force password change
-LOGIN_PASSCHANGE        = Change password
-LOGIN_FORCECHANGE_INTRO = Before you continue, please choose a new password to set for your account.
-LOGIN_FORCECHANGE_TEMP  = Your account is currently set up with a temporary password.
-LOGIN_FORCECHANGE_OLD   = The password on your account has expired as a result of age limits enforced by the site's password policy.
+LOGIN_PASSCHANGE_TITLE  = Change password
+LOGIN_PASSCHANGE_INTRO  = Please choose a new password using the form below.
+LOGIN_PASSCHANGE_TEMP   = Your account is currently set up with a temporary password.
+LOGIN_PASSCHANGE_OLD    = The password on your account has expired as a result of age limits enforced by the site's password policy.
+LOGIN_PASSCHANGE_MANUAL = You have chosen to change the password set for your account.
 LOGIN_NEWPASSWORD       = New password
 LOGIN_CONFPASS          = Confirm password
 LOGIN_OLDPASS           = Your current password
@@ -142,6 +143,10 @@ LOGIN_PASSCHANGE_ERRNOUSER = No signed in user detected, password change unsuppo
 LOGIN_PASSCHANGE_ERRMATCH  = The new password specified does not match the confirm password.
 LOGIN_PASSCHANGE_ERRSAME   = The new password can not be the same as the old password.
 LOGIN_PASSCHANGE_ERRVALID  = The specified old password is not correct. You must enter the password you used to sign in.
+
+LOGIN_PASSCHANGE_DONETITLE  = Password changed
+LOGIN_PASSCHANGE_SUMMARY    = Password change  successful!
+LOGIN_PASSCHANGE_MESSAGE    = Your password has been updated successfully. The next time you log in you should enter your new password.
 
 LOGIN_POLICY                 = Password policy
 LOGIN_POLICY_INTRO           = When choosing a new password, keep in mind that:
