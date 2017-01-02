@@ -91,6 +91,9 @@ LOGIN_ERR_BADRECCHAR  = Account reset codes may only contain alphanumeric charac
 LOGIN_ERR_BADRECCODE  = The provided account reset code is invalid. Note that the code is case sensitive - upper and lower case characters are treated differently. Please check you entered the code correctly.
 LOGIN_ERR_NORECINACT  = Your account is inactive, and therefore can not be recovered. In order to access your account, please request a new activation code and password.
 
+LOGIN_RESET_UID       = User ID
+LOGIN_RESET_CODE      = Reset code
+
 LOGIN_RESET_SUBJECT   = Your {V_[sitename]} account
 LOGIN_RESET_GREET     = Hi %(username)s
 LOGIN_RESET_INTRO     = Your password has been reset, and your username and new password are given below:

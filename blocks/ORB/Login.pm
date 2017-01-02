@@ -746,22 +746,25 @@ sub _validate_passchange {
 # @return Two values: a reference to the user whose password has been reset
 #         on success, or an error message, and a reference to a hash containing
 #         the data entered by the user.
-# FIXME: OVERHAUL
 sub _validate_reset {
     my $self = shift;
     my $args   = {};
     my $error;
 
     # Obtain the userid from the query string, if possible.
-    my $uid = is_defined_numeric($self -> {"cgi"}, "uid")
-        or return ("{L_LOGIN_ERR_NOUID}", $args);
+    ($args -> {"uid"}, $error) = $self -> validate_numeric("uid", { "required" => 1,
+                                                                    "nidename" => "{L_LOGIN_UID}",
+                                                                    "intonly"  => 1,
+                                                                    "min"      => 2});
+    return ("{L_LOGIN_ERR_NOUID}", $args)
+        if($error);
 
-    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byid($uid)
+    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byid($args -> {"uid"})
         or return ("{L_LOGIN_ERR_BADUID}", $args);
 
     # Get the reset code, should be a 64 character alphanumeric string
     ($args -> {"resetcode"}, $error) = $self -> validate_string("resetcode", {"required"   => 1,
-                                                                              "nicename"   => "{L_LOGIN_RESETCODE}",
+                                                                              "nicename"   => "{L_LOGIN_RESET_CODE}",
                                                                               "minlen"     => 64,
                                                                               "maxlen"     => 64,
                                                                               "formattest" => '^[a-zA-Z0-9]+$',
@@ -1123,7 +1126,7 @@ sub _generate_recover {
                                  message => "{L_LOGIN_RECOVER_MESSAGE}",
                                  buttons => [ {"message" => "{L_LOGIN_LOGIN}",
                                                "colour"  => "standard",
-                                               "href"    => $url} ]));
+                                               "href"    => $url } ]));
 }
 
 
@@ -1133,7 +1136,6 @@ sub _generate_recover {
 #
 # @param  error If set, display an error message rather than a 'completed' message.
 # @return An array of two values: the page title string, the 'resent' message.
-# FIXME: OVERHAUL
 sub _generate_reset {
     my $self  = shift;
     my $error = shift;
@@ -1142,26 +1144,22 @@ sub _generate_reset {
 
     if(!$error) {
         return ("{L_LOGIN_RESET_DONETITLE}",
-                $self -> message_box("{L_LOGIN_RESET_DONETITLE}",
-                                     "security",
-                                     "{L_LOGIN_RESET_SUMMARY}",
-                                     "{L_LOGIN_RESET_MESSAGE}",
-                                     undef,
-                                     "logincore",
-                                     [ {"message" => "{L_LOGIN_LOGIN}",
-                                        "colour"  => "blue",
-                                        "action"  => "location.href='$url'"} ]));
+                $self -> message_box(title   => "{L_LOGIN_RESET_DONETITLE}",
+                                     type    => "account",
+                                     summary => "{L_LOGIN_RESET_SUMMARY}",
+                                     message => "{L_LOGIN_RESET_MESSAGE}",
+                                     buttons => [ {"message" => "{L_LOGIN_LOGIN}",
+                                                   "colour"  => "standard",
+                                                   "href"    => $url } ]));
     } else {
         return ("{L_LOGIN_RESET_ERRTITLE}",
-                $self -> message_box("{L_LOGIN_RESET_ERRTITLE}",
-                                     "error",
-                                     "{L_LOGIN_RESET_ERRSUMMARY}",
-                                     $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRDESC", {"%(reason)s" => $error}),
-                                     undef,
-                                     "logincore",
-                                     [ {"message" => "{L_LOGIN_LOGIN}",
-                                        "colour"  => "blue",
-                                        "action"  => "location.href='$url'"} ]));
+                $self -> message_box(title   => "{L_LOGIN_RESET_ERRTITLE}",
+                                     type    => "error",
+                                     summary => "{L_LOGIN_RESET_ERRSUMMARY}",
+                                     message => $self -> {"template"} -> replace_langvar("LOGIN_RESET_ERRDESC", {"%(reason)s" => $error}),
+                                     button  => [ { "message" => "{L_LOGIN_LOGIN}",
+                                                    "colour"  => "blue",
+                                                    "href"    => $url } ]));
     }
 }
 
@@ -1251,7 +1249,7 @@ sub _handle_signup {
 
 
 ## @method private @ _handle_activate()
-# Handle the process of showing the form they can enter an acitivation code
+# Handle the process of showing the form they can enter an activation code
 # through, and processing submission from the form.
 #
 # @return An array containing the page title, content, extra header data, and
@@ -1279,7 +1277,7 @@ sub _handle_activate {
 
 
 ## @method private @ _handle_resend()
-# Handle the process of showing the form they can request a new acitivation code
+# Handle the process of showing the form they can request a new activation code
 # through, and processing submission from the form.
 #
 # @return An array containing the page title, content, extra header data, and
@@ -1303,22 +1301,46 @@ sub _handle_resend {
 }
 
 
-# FIXME: OVERHAUL
+## @method private @ _handle_resend()
+# Handle the process of showing the form they can request a password reset code
+# through, and processing submission from the form.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
 sub _handle_recover {
     my $self = shift;
 
     if(defined($self -> {"cgi"} -> param("dorecover"))) {
         my ($user, $args) = $self -> _validate_recover();
         if(!ref($user)) {
-            $self -> log("Reset error", $user);
+            $self -> log("Recover error", $user);
             return $self -> _generate_recover_form($user);
         } else {
-            $self -> log("Reset success", $user -> {"username"});
+            $self -> log("Recover success", $user -> {"username"});
             return $self -> _generate_recover($user);
         }
     }
 
     return $self -> _generate_recover_form();
+}
+
+
+## @method private @ _handle_reset()
+# Handle the process of resetting the user's password.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
+sub _handle_reset {
+    my $self = shift;
+
+    my ($user, $args) = $self -> _validate_reset();
+    if(!ref($user)) {
+        $self -> log("Reset error", $user);
+        return $self -> _generate_reset($user);
+    } else {
+        $self -> log("Reset success", $user -> {"username"});
+        return $self -> _generate_reset();
+    }
 }
 
 
