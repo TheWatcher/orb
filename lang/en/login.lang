@@ -17,12 +17,13 @@ PERSIST_WARNING = <strong>WARNING</strong>: do not enable the "Remember me" opti
 
 LOGIN_DONETITLE  = Signed in
 LOGIN_SUMMARY    = You have successfully signed into the system.
-LOGIN_MESSAGE   = You have successfully signed in, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGIN_MESSAGE   = You have successfully signed in, click continue or <a href="{V_[scriptpath]}">click here</a> to return to the front page.
 LOGIN_NOREDIRECT = You have successfully signed in, but warnings were encountered during login. Please check the warning messages, and <a href="mailto:%(supportaddr)s">contact support</a> if a serious problem has been encountered, otherwise, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
 
 LOGOUT_TITLE    = Signed out
 LOGOUT_SUMMARY  = You have successfully signed out.
-LOGOUT_MESSAGE = You have successfully signed out, and you will be redirected shortly. If you do not want to wait, click continue. Alternatively, <a href="{V_[scriptpath]}">Click here</a> to return to the front page.
+LOGOUT_MESSAGE = You have successfully signed out, click continue or <a href="{V_[scriptpath]}">click here</a> to return to the front page.
+LOGIN_NOTSIGNEDIN = You do not have a signed-in session active. Unable to sign you out!
 
 LOGIN_ERR_BADUSERCHAR = Illegal character in username. Usernames may only contain alphanumeric characters, underscores, or hyphens.
 LOGIN_ERR_INVALID     = Login failed: unknown username or password provided.

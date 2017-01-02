@@ -974,8 +974,7 @@ sub _generate_passchange_form {
 ## @method private @ generate_loggedin()
 # Generate the contents of a page telling the user that they have successfully logged in.
 #
-# @return An array of three values: the page title string, the 'logged in' message, and
-#         a meta element to insert into the head element to redirect the user.
+# @return An array of two values: the page title string, and the 'logged in' message.
 sub _generate_loggedin {
     my $self = shift;
     my $content;
@@ -1017,9 +1016,7 @@ sub _generate_loggedin {
 ## @method private @ generate_signedout()
 # Generate the contents of a page telling the user that they have successfully logged out.
 #
-# @return An array of three values: the page title string, the 'logged out' message, and
-#         a meta element to insert into the head element to redirect the user.
-# FIXME: OVERHAUL
+# @return An array of two values: the page title string, and the 'logged out' message
 sub _generate_signedout {
     my $self = shift;
 
@@ -1029,16 +1026,13 @@ sub _generate_signedout {
 
     # return the title, content, and extraheader
     return ("{L_LOGOUT_TITLE}",
-            $self -> message_box("{L_LOGOUT_TITLE}",
-                                 "security",
-                                 "{L_LOGOUT_SUMMARY}",
-                                 $self -> {"template"} -> replace_langvar("LOGOUT_MESSAGE", {"%(url)s" => $url}),
-                                 undef,
-                                 "logincore",
-                                 [ {"message" => "{L_SITE_CONTINUE}",
-                                    "colour"  => "blue",
-                                    "action"  => "location.href='$url'"} ]),
-            $self -> {"template"} -> load_template("refreshmeta.tem", {"%(url)s" => $url}));
+            $self -> message_box(title   => "{L_LOGOUT_TITLE}",
+                                 type    => "account",
+                                 summary => "{L_LOGOUT_SUMMARY}",
+                                 message => $self -> {"template"} -> replace_langvar("LOGOUT_MESSAGE", {"%(url)s" => $url}),
+                                 buttons => [ {"message" => "{L_SITE_CONTINUE}",
+                                               "colour"  => "standard",
+                                               "href"    => $url } ]));
 }
 
 
@@ -1205,7 +1199,7 @@ sub _build_login_response {
 
 
 # ============================================================================
-#  Interface functions
+#  UI handler/dispatcher functions
 
 ## @method private @ _handle_signup()
 # Handle the process of showing the user the signup form, and processing any
@@ -1460,12 +1454,16 @@ sub _handle_default {
 }
 
 
-# FIXME: OVERHAUL
+## @method private @ _handle_signout()
+# Handle signing the user out of the system.
+#
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
 sub _handle_signout {
     my $self = shift;
 
     # User must be logged in to log out
-    return $self -> _generate_not_loggedin()
+    return $self -> generate_errorbox(message => "{L_LOGIN_NOTSIGNEDIN}")
         if($self -> {"session"} -> anonymous_session());
 
     # User is logged in, do the signout
@@ -1473,7 +1471,7 @@ sub _handle_signout {
     if($self -> {"session"} -> delete_session()) {
         return $self -> _generate_signedout();
     } else {
-        return $self -> generate_errorbox($SessionHandler::errstr);
+        return $self -> generate_errorbox(message => $SessionHandler::errstr);
     }
 }
 
@@ -1508,8 +1506,8 @@ sub _dispatch_ui {
         when("passchange") { ($title, $body, $extrahead, $extrajs) = $self -> _handle_passchange(); }
 
         # default handles signin and redirect, paired with signout to log the user out
-        default            { ($title, $body, $extrahead, $extrajs) = $self -> _handle_default();    }
         when("signout")    { ($title, $body, $extrahead, $extrajs) = $self -> _handle_signout();    }
+        default            { ($title, $body, $extrahead, $extrajs) = $self -> _handle_default();    }
     }
 
     # Done generating the page content, return the filled in page template
@@ -1520,6 +1518,9 @@ sub _dispatch_ui {
                                       doclink   => 'login');
 }
 
+
+# ============================================================================
+#  Module interface functions
 
 ## @method $ page_display()
 # Generate the page content for this module.
