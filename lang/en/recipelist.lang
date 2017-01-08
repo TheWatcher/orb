@@ -1,0 +1,10 @@
+LIST_TITLE     = Recipes - Page %(page)s
+LIST_SUMMARIES = Summaries
+LIST_FILTER    = Filter
+LIST_SORT      = Sort
+
+LIST_NAME      = Name
+LIST_TYPE      = Type
+LIST_STATUS    = Status
+
+LIST_OKAY      = Okay

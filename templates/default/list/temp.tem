@@ -1,0 +1,1 @@
+                                             <li class="temp"><i class="fa fa-thermometer-three-quarters" aria-hidden="true"></i>&nbsp;<span class="ljs-temp">%(temp)s%(temptype)s</span></li>

@@ -1,0 +1,6 @@
+        </script>
+        <script src="{V_[templatepath]}3rdparty/listjs/list.min.js"></script>
+        <script src="{V_[templatepath]}3rdparty/fuzzysearch/list.fuzzysearch.min.js"></script>
+        <script src="{V_[jspath]}delaysearch.js"></script>
+        <script src="{V_[jspath]}recipe_list.js"></script>
+        <script>
