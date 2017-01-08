@@ -30,3 +30,28 @@ li.image {
 .menu > li > a.nopadding {
     padding: 0;
 }
+
+
+.pagemenu {
+    list-style-type: none;
+    border-bottom: 1px solid #bbb;
+    border-top: 1px solid #BBB;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+}
+
+.pagemenu > li {
+    display: inline-block;
+    border-left: 1px dotted #ddd;
+    border-right: 1px dotted #ddd;
+}
+
+.pagemenu > li > a {
+    width: 2rem;
+    padding: 0.75rem 0.75rem;
+}
+
+.pagemenu > li.active > a {
+    background: #1779ba;
+    color: #fefefe !important;
+}
