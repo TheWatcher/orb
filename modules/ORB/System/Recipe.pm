@@ -299,6 +299,93 @@ sub set_status {
 # ============================================================================
 #  Recipe retrieval
 
+## @method $ get_recipe_list($mode, $exclstates)
+# Fetch a minimal list of attributes for a list of recipes. This can be used
+# to generate recipe index pages.
+#
+# @param mode   The list mode. Set this to $ to list recipes whose names start
+#               with symbols; 0 to list recipes whose names start with a digit,
+#               A to Z (or the lowercase) to list recipes whose names start with
+#               that letter, or undef to fetch all recipes.
+# @param exlstates Optional list of state names to exclude from the list. If
+#               not specified, this defaults to the standard deleted and edited
+#               state names.
+# @return A reference to an array of recipe hashes, sorted by name.
+sub get_recipe_list {
+    my $self      = shift;
+    my $mode      = shift;
+    my $exlstates = shift;
+
+    $self -> clear_error();
+
+    if(!defined($exlstates)) {
+        $exlstates = [ $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
+                       $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted",
+                     ];
+    }
+
+    my @params = ();
+    my @wherefrag = ();
+
+    # Get the status IDs for excluded states
+    my @states = ();
+    foreach my $state (@{$exlstates}) {
+        my $statusid = $self -> {"entities"} -> {"states"} -> get_id($state)
+            or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
+
+        push(@states, $statusid);
+    }
+
+    # And add them to the query
+    if(scalar(@states)) {
+        push(@wherefrag, "`r`.`status_id` NOT IN (?".(",?" x (scalar(@states) - 1)).") ");
+        push(@params, @states);
+    }
+
+    # If a mode has been specified, set up query framents for it
+    if(defined($mode)) {
+        given($mode) {
+            when('$') { push(@wherefrag, "`r`.`name` REGEXP '^[^[:alnum:]]'"); }
+            when('0') { push(@wherefrag, "`r`.`name` REGEXP '^[[:digit:]]'"); }
+            when(/[a-zA-Z]/) { push(@wherefrag, "`r`.`name` LIKE '$mode%'"); }
+        }
+    }
+
+    my $where = "";
+    $where = "WHERE ".join(" AND ", @wherefrag)
+        if(scalar(@wherefrag));
+
+    my $query = "SELECT `r`.*,
+                        `s`.`name` AS `status`,
+                        `t`.`name` AS `type`,
+                        `c`.`username` AS `creatoruser`, `c`.`realname` AS `creatorname`,
+                        `u`.`username` AS `updateuser`, `u`.`realname` AS `updatename`
+                 FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`
+                     ON `s`.`id` = `r`.`status_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."`  AS `t`
+                     ON `t`.`id` = `r`.`type_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."`  AS `c`
+                     ON `c`.`user_id` = `r`.`creator_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."`  AS `u`
+                     ON `u`.`user_id` = `r`.`updater_id`
+                 $where
+                 ORDER BY `r`.`name`";
+
+    my $recipeh = $self -> {"dbh"} -> prepare($query);
+    $recipeh -> execute(@params)
+        or return $self -> self_error("Unable to perform recipe listing: ".$self -> {"dbh"} -> errstr);
+
+    my $recipes = $recipeh -> fetchall_arrayref({});
+    foreach my $recipe (@{$recipes}) {
+        $recipe -> {"tags"} = $self -> _get_tags($recipe -> {"id"})
+            or return undef;
+    }
+
+    return $recipes;
+}
+
+
 ## @method $ get_recipe($recipeid)
 # Given a recipe ID, attempt to fetch the data for the recipe, including its
 # ingredient and tags lists.
