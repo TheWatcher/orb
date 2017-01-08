@@ -315,8 +315,8 @@ sub get_recipe {
     my $query = "SELECT `r`.*,
                         `s`.`name` AS `status`,
                         `t`.`name` AS `type`,
-                        `c`.`username` AS `creatoruser`, `c`,`realname` AS `creatorname`
-                        `u`.`username` AS `updateuser`, `u`,`realname` AS `updatename`
+                        `c`.`username` AS `creatoruser`, `c`.`realname` AS `creatorname`,
+                        `u`.`username` AS `updateuser`, `u`.`realname` AS `updatename`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`
                      ON `s`.`id` = `r`.`status_id`
