@@ -31,7 +31,7 @@ use Webperl::Utils qw(join_complex path_join hash_or_hashref);
 use XML::Simple;
 use DateTime;
 use JSON;
-
+use Data::Dumper;
 # Hack the DateTime object to include the TO_JSON function needed to support
 # JSON output of datetime objects. Outputs as ISO8601
 sub DateTime::TO_JSON {
@@ -218,6 +218,31 @@ sub message_box {
                                                     "%(class)s"      => $args -> {"class"} // "secondary",
                                                     "%(buttons)s"    => $buttonbar,
                                                   });
+}
+
+
+## @method $ pagemenu($active)
+# Create a page menu to include at the top of pages that need menu listing pages
+#
+# @param active The active page letter, or undef if none are active.
+# @return A string containing the page menu
+sub pagemenu {
+    my $self   = shift;
+    my $active = shift // "all";
+
+    my $pages = "";
+    foreach my $page ("0", "A" ... "Z", "All") {
+        my $url = $self -> build_url(block    => "list",
+                                     pathinfo => [ $page ]);
+
+        $pages .= $self -> {"template"} -> load_template("navigation/pagemenu-page.tem",
+                                                         { "%(active)s" => (lc($active) eq lc($page) ? "active" : ""),
+                                                           "%(page)s"   => $page,
+                                                           "%(url)s"    => $url });
+    }
+
+    return $self -> {"template"} -> load_template("navigation/pagemenu.tem",
+                                                  { "%(pages)s" => $pages });
 }
 
 
