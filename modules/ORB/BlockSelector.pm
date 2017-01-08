@@ -85,8 +85,8 @@ sub get_block {
         # Split along slashes
         my @args = split(/\//, $pathinfo);
 
-        # Defaults the block to the gallery, and clear the pathinfo and pathinfo for safety
-        my $block = $settings -> {"config"} -> {"gallery_block"};
+        # Defaults the block, and clear the pathinfo and pathinfo for safety
+        my $block = $settings -> {"config"} -> {"default_block"};
         $cgi -> delete('pathinfo', 'api');
 
         # If a single item remains in the argument, it is a block name
