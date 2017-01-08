@@ -764,29 +764,23 @@ sub _get_ingredients {
 # Fetch the tags for the specified recipe.
 #
 # @param recipeid The ID of the recipe to fetch the tags for.
-# @return A reference to an array of tag names on success, undef on error.
+# @return A reference to an hash of tags on success, undef on error.
 sub _get_tags {
     my $self     = shift;
     my $recipeid = shift;
 
     $self -> clear_error();
 
-    my $tagh = $self -> {"dbh"} -> prepare("SELECT `t`.`name`
-                                            FROM `".$self -> {"settings"} -> {"database"} -> {"recipetags"}."` AS `rt`
+    my $tagh = $self -> {"dbh"} -> prepare("SELECT `t`.`name`,`t`.`color`, `t`.`background`, `t`.`fa-icon`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"recipetags"}."` AS `rt`,
                                                  `".$self -> {"settings"} -> {"database"} -> {"tags"}."` AS `t`
-                                            WHERE `t`.`id` = `rt`.`ingred_id`
+                                            WHERE `t`.`id` = `rt`.`tag_id`
                                             AND `rt`.`recipe_id` = ?
                                             ORDER BY `t`.`name`");
     $tagh -> execute($recipeid)
         or return $self -> self_error("Tag lookup for '$recipeid' failed: ".$self -> {"dbh"} -> errstr());
 
-    # No easy way to fetch a flat list of tags, so do it the mechanistic way...
-    my @tags = ();
-    while(my $tag = $tagh -> fetchrow_arrayref()) {
-        push(@tags, $tag -> [0]);
-    }
-
-    return \@tags;
+    return $tagh -> fetchall_arrayref({});
 }
 
 
