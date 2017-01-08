@@ -23,7 +23,6 @@
                 <!-- Start top bar -->
 %(userbar)s
                 <!-- End top bar -->
-                <br />
                 <!-- Start content -->
                 <div class="row" id="content">
 %(content)s
