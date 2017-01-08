@@ -1,3 +1,4 @@
+%(pagemenu)s
                     <div class="large-4 columns">
                         <h4>{L_SUMMARY_ADDED}</h4>
                         <table>

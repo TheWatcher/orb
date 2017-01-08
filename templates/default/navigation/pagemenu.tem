@@ -1,0 +1,3 @@
+                    <ul class="pagemenu text-center">
+%(pages)s
+                    </ul>
