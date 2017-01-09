@@ -105,7 +105,7 @@ sub _generate_list {
             $self -> {"template"} -> load_template("list/content.tem",
                                                    { "%(pagemenu)s" => $self -> pagemenu($mode),
                                                      "%(page)s"     => uc($mode // "All"),
-                                                     "%(recipes)s"  => join("", map { $self -> _build_recipe($_) }, @{$recipes}),
+                                                     "%(recipes)s"  => join("", map { $self -> _build_recipe($_) } @{$recipes}),
                                                    }),
             $self -> {"template"} -> load_template("list/extrahead.tem"),
             $self -> {"template"} -> load_template("list/extrajs.tem"),
