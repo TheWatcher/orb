@@ -23,7 +23,7 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use v5.14;
-use Data::Dumper;
+
 ## @method private % _build_tag($tag)
 # Given a reference to a hash containing tag data, generate HTML to
 # represent the tag
@@ -34,10 +34,55 @@ sub _build_tag {
     my $self = shift;
     my $tag  = shift;
 
-    return $self -> {"template"} -> load_template("list/tag.tem", { "%(name)s" => $tag -> {"name"},
-                                                                    "%(color)s" => $tag -> {"color"},
-                                                                    "%(bgcol)s" => $tag -> {"background"},
+    return $self -> {"template"} -> load_template("list/tag.tem", { "%(name)s"   => $tag -> {"name"},
+                                                                    "%(color)s"  => $tag -> {"color"},
+                                                                    "%(bgcol)s"  => $tag -> {"background"},
                                                                     "%(faicon)s" => $tag -> {"fa-icon"}
+                                                  });
+}
+
+
+## @method private % _build_recipe($recipe)
+# Given a reference to a hash containing recipe data, generate HTML to
+# represent the recipe
+#
+# @param recipe A reference to a recipe hash
+# @return A string representing the recipe
+sub _build_recipe {
+    my $self = shift;
+    my $recipe = shift;
+
+    my $temp = "";
+
+    # If a temperature has been specified, it needs including in the output
+    if($recipe -> {"temp"} && $recipe -> {"temptype"} ne "N/A") {
+        $temp = $self -> {"template"} -> load_template("list/temp.tem",
+                                                       { "%(temp)s" => $recipe -> {"temp"},
+                                                         "%(temptype)s" => $recipe -> {"temptype"}
+                                                       });
+    }
+
+    # Access to recipe controls is managed by metadata contexts
+    my $controls = "";
+    if($self -> check_permission("recipe.edit", $recipe -> {"metadata_id"})) {
+        $controls .= $self -> {"template"} -> load_template("list/recipe.tem",
+                                                            { "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
+                                                              "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
+                                                              "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
+                                                            });
+    }
+
+    return $self -> {"template"} -> load_template("list/recipe.tem",
+                                                  { "%(id)s"       => $recipe -> {"id"},
+                                                    "%(url-view)s" => $self -> build_url(block    => "view",
+                                                                                         pathinfo => [ $recipe -> {"id"} ]),
+                                                    "%(name)s"     => $recipe -> {"name"},
+                                                    "%(type)s"     => $recipe -> {"type"},
+                                                    "%(status)s"   => $recipe -> {"status"},
+                                                    "%(time)s"     => $self -> {"template"} -> humanise_seconds($recipe -> {"timemins"} * 60, 1),
+                                                    "%(temp)s"     => $temp,
+                                                    "%(tags)s"     => join("", map { $self -> _build_tag($_) } @{$recipe -> {"tags"}}),
+                                                    "%(controls)s" => $controls,
                                                   });
 }
 
@@ -51,46 +96,16 @@ sub _generate_list {
     my $self = shift;
     my $mode = shift;
 
+    # Pull a (hopefully) filtered list of recipes from the database
     my $recipes = $self -> {"system"} -> {"recipe"} -> get_recipe_list($mode)
         or $self -> generate_errorbox(message => $self -> {"system"} -> {"recipe"} -> errstr());
 
-    my @list;
-    foreach my $recipe (@{$recipes}) {
-        my $temp = "";
-
-        if($recipe -> {"temp"} && $recipe -> {"temptype"} ne "N/A") {
-            $temp = $self -> {"template"} -> load_template("list/temp.tem", { "%(temp)s" => $recipe -> {"temp"},
-                                                                              "%(temptype)s" => $recipe -> {"temptype"}
-                                                           });
-        }
-
-        my $controls = "";
-        if($self -> check_permission("recipe.edit", $recipe -> {"metadata_id"})) {
-            $controls .= $self -> {"template"} -> load_template("list/recipe.tem",
-                                                                { "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
-                                                                  "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
-                                                                  "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
-                                                                });
-        }
-
-        push(@list, $self -> {"template"} -> load_template("list/recipe.tem",
-                                                           { "%(id)s"       => $recipe -> {"id"},
-                                                             "%(url-view)s" => $self -> build_url(block    => "view",
-                                                                                                  pathinfo => [ $recipe -> {"id"} ]),
-                                                             "%(name)s"     => $recipe -> {"name"},
-                                                             "%(type)s"     => $recipe -> {"type"},
-                                                             "%(status)s"   => $recipe -> {"status"},
-                                                             "%(time)s"     => $self -> {"template"} -> humanise_seconds($recipe -> {"timemins"} * 60, 1),
-                                                             "%(temp)s"     => $temp,
-                                                             "%(tags)s"     => join("", map { $self -> _build_tag($_) } @{$recipe -> {"tags"}}),
-                                                             "%(controls)s" => $controls,
-                                                           }));
-    }
-
+    # And build the template fragments from that list
     return ($self -> {"template"} -> replace_langvar("LIST_TITLE", { "%(page)s" => uc($mode // "All") }),
-            $self -> {"template"} -> load_template("list/content.tem", {"%(pagemenu)s" => $self -> pagemenu($mode),
-                                                                        "%(page)s"     => uc($mode // "All"),
-                                                                        "%(recipes)s"  => join("", @list),
+            $self -> {"template"} -> load_template("list/content.tem",
+                                                   { "%(pagemenu)s" => $self -> pagemenu($mode),
+                                                     "%(page)s"     => uc($mode // "All"),
+                                                     "%(recipes)s"  => join("", map { $self -> _build_recipe($_) }, @{$recipes}),
                                                    }),
             $self -> {"template"} -> load_template("list/extrahead.tem"),
             $self -> {"template"} -> load_template("list/extrajs.tem"),
@@ -114,11 +129,15 @@ sub _dispatch_ui {
     my ($title, $body, $extrahead, $extrajs) = ("", "", "", "");
     my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
-    print STDERR "Mode: ".$pathinfo[0]."\n";
+    # If the pathinfo contains a recognised page character, use that
     if(defined($pathinfo[0]) && $pathinfo[0] =~ /^[0a-zA-Z\$]$/) {
         ($title, $body, $extrahead, $extrajs) = $self -> _generate_list($pathinfo[0]);
+
+    # If th euser has requested all recipes, do no filtering
     } elsif($pathinfo[0] && lc($pathinfo[0]) eq "all") {
         ($title, $body, $extrahead, $extrajs) = $self -> _generate_list();
+
+    # Otherwise fall back on the default of 'A' recipes
     } else {
         ($title, $body, $extrahead, $extrajs) = $self -> _generate_list('A');
     }
