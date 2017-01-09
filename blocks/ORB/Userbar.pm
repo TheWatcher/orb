@@ -47,33 +47,53 @@ sub block_display {
 
     $self -> clear_error();
 
-    my $urls = { "signin"  => $self -> build_url(block => "login",
-                                                fullurl  => 1,
-                                                pathinfo => [],
-                                                params   => {},
-                                                forcessl => 1),
-                 "signout" => $self -> build_url(block => "login",
-                                                fullurl  => 1,
-                                                pathinfo => [ "signout" ],
-                                                params   => {},
-                                                forcessl => 1),
-                 "signup"  => $self -> build_url(block => "login",
-                                                 fullurl  => 1,
-                                                 pathinfo => [ "signup" ],
-                                                 params   => {},
-                                                 forcessl => 1),
-                 "setpass" => $self -> build_url(block => "login",
-                                                 fullurl  => 1,
-                                                 pathinfo => [ "passchange" ],
-                                                 params   => {},
-                                                 forcessl => 1),
-                 "front"   => $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
-                                                 fullurl  => 1,
-                                                 pathinfo => [],
-                                                 params   => {})
+    my $urls = { "%(url-signin)s"  => $self -> build_url(block => "login",
+                                                         fullurl  => 1,
+                                                         pathinfo => [],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-signout)s" => $self -> build_url(block => "login",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ "signout" ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-signup)s"  => $self -> build_url(block => "login",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ "signup" ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-setpass)s" => $self -> build_url(block => "login",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ "passchange" ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-front)s"   => $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
+                                                         fullurl  => 1,
+                                                         pathinfo => [],
+                                                         params   => {}),
+                 "%(url-list)s"    => $self -> build_url(block => "list",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-tags)s"    => $self -> build_url(block => "tags",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-types)s"   => $self -> build_url(block => "types",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ ],
+                                                         params   => {},
+                                                         forcessl => 1),
+                 "%(url-shop)s"    => $self -> build_url(block => "shop",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ ],
+                                                         params   => {},
+                                                         forcessl => 1),
     };
 
-    my $userprofile;
+    my ($userprofile, $sidemenu);
 
     # Is the user logged in?
     if(!$self -> {"session"} -> anonymous_session()) {
@@ -85,25 +105,36 @@ sub block_display {
                                                               { "%(realname)s"    => $user -> {"fullname"},
                                                                 "%(username)s"    => $user -> {"username"},
                                                                 "%(gravhash)s"    => $user -> {"gravatar_hash"},
-                                                                "%(url-signout)s" => $urls -> {"signout"},
-                                                                "%(url-setpass)s" => $urls -> {"setpass"},
                                                               });
+
+        $sidemenu = $self -> {"template"} -> load_template("sidemenu/signedin.tem",
+                                                           { "%(realname)s"    => $user -> {"fullname"},
+                                                             "%(username)s"    => $user -> {"username"},
+                                                             "%(gravhash)s"    => $user -> {"gravatar_hash"},
+                                                           });
 
     } else {
-        my $signup = $self -> {"template"} -> load_template("userbar/profile_signup.tem")
-            if($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"});
+        my ($topsignup, $sidesignup) = ("", "");
+
+        if($self -> {"settings"} -> {"config"} -> {"Login:allow_self_register"}) {
+            $topsignup  = $self -> {"template"} -> load_template("userbar/profile_signup.tem");
+            $sidesignup = $self -> {"template"} -> load_template("sidemenu/signup.tem");
+        }
 
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_signedout.tem",
-                                                              { "%(signup)s"    => $signup,
-                                                                "%(url-signin)s" => $urls -> {"signin"},
-                                                                "%(url-signup)s" => $urls -> {"signup"},
-                                                              });
+                                                              { "%(signup)s" => $topsignup });
+
+        $sidemenu = $self -> {"template"} -> load_template("sidemenu/signedout.tem",
+                                                           { "%(signup)s" => $sidesignup });
     }
 
-    return $self -> {"template"} -> load_template("userbar/userbar.tem",
-                                                  { "%(pagename)s"  => $title,
-                                                    "%(url-front)s" => $urls -> {"front"},
-                                                    "%(profile)s"   => $userprofile});
+    return ( $self -> {"template"} -> load_template("userbar/userbar.tem",
+                                                    { "%(pagename)s"  => $title,
+                                                      "%(profile)s"   => $userprofile,
+                                                      %{ $urls }
+                                                    }),
+             $self -> {"template"} -> process_template($sidemenu, $urls)
+        );
 }
 
 

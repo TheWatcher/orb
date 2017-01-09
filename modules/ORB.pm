@@ -124,11 +124,12 @@ sub generate_orb_page {
 
     my $userbar = $self -> {"module"} -> load_module("ORB::Userbar");
 
+    my ($topbar, $leftbar) = $userbar -> block_display($args -> {"title"}, $self -> {"block"}, $args -> {"doclink"});
     return $self -> {"template"} -> load_template("page.tem", {"%(extrahead)s" => $args -> {"extrahead"} // "",
                                                                "%(extrajs)s"   => $args -> {"extrajs"} // "",
                                                                "%(title)s"     => $args -> {"title"} // "",
-                                                               "%(leftmenu)s"  => $args -> {"leftmenu"} // "",
-                                                               "%(userbar)s"   => ($userbar ? $userbar -> block_display($args -> {"title"}, $args -> {"leftmenu"}, $self -> {"block"}, $args -> {"doclink"}) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                               "%(leftmenu)s"  => $leftbar,
+                                                               "%(userbar)s"   => $topbar,
                                                                "%(content)s"   => $args -> {"content"}});
 }
 
@@ -300,15 +301,9 @@ sub check_login {
                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                   "colour"  => "blue",
                                                   "action"  => "location.href='{V_[scriptpath]}'"} ]);
-        my $userbar = $self -> {"module"} -> load_module("ORB::Userbar");
 
-        # Build the error page...
-        return $self -> {"template"} -> load_template("error/general.tem",
-                                                      {"%(title)s"     => "{L_PERMISSION_FAILED_TITLE}",
-                                                       "%(message)s"   => $message,
-                                                       "%(extrahead)s" => "",
-                                                       "%(userbar)s"   => ($userbar ? $userbar -> block_display("{L_PERMISSION_FAILED_TITLE}") : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
-                                                      });
+        return $self -> generate_orb_page(title => "{L_PERMISSION_FAILED_TITLE}",
+                                          content => $message);
     }
 
     return undef;

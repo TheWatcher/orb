@@ -17,12 +17,12 @@
         <!-- canvas wrapper -->
         <div class="off-canvas-wrapper">
 %(leftmenu)s
-
             <!-- content wrapper -->
             <div class="off-canvas-content" data-off-canvas-content>
                 <!-- Start top bar -->
 %(userbar)s
                 <!-- End top bar -->
+                <br />
                 <!-- Start content -->
                 <div class="row" id="content">
 %(content)s

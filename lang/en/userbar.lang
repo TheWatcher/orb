@@ -12,3 +12,14 @@ USERBAR_DOCLINK         = Documentation (opens in new window)
 USERBAR_FRONT           = Aviary front page
 
 USERBAR_IMPORT          = Import schedule
+
+SIDE_TITLE              = Online Recipe Book
+SIDE_SUMMARIES          = Summaries
+SIDE_RECIPES            = Recipes
+SIDE_TAGS               = Tags
+SIDE_TYPES              = Types
+SIDE_SHOPPING           = Shopping
+SIDE_SET_PASSWORD       = Set password
+SIDE_SIGN_IN            = Sign in
+SIDE_SIGN_UP            = Sign up
+SIDE_SIGN_OUT           = Sign out

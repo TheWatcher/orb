@@ -22,6 +22,11 @@ div.top-bar-title {
     font-weight: bold;
 }
 
+/* fix menu button pad */
+#menubtn {
+    margin-right: 0.5rem;
+}
+
 /* fix padding for menu text with image */
 li.image {
     padding: 0 0 0 0.25rem;
@@ -31,6 +36,17 @@ li.image {
     padding: 0;
 }
 
+
+/* title for off-canvas menu */
+div.off-canvas > h5 {
+    padding: 0.5rem 0 0 1rem;
+}
+
+/* off-canvas menu user */
+div.off-canvas .user {
+    margin-left: 1rem;
+    margin-top: 0.5rem;
+}
 
 .pagemenu {
     list-style-type: none;
