@@ -1,8 +1,7 @@
                 <div class="top-bar">
                     <div class="top-bar-left">
                         <ul class="menu">
-                            <li class="hide-for-medium"><button id="menubtn" class="menu-icon dark" type="button" data-open="offCanvas"></button></li>
-                            <li><a href="%(url-front)s"><i class="fa fa-book fa-lg" style="color: #000"></i></a></li>
+                            <li><button id="menubtn" class="menu-icon dark" type="button" data-open="offCanvas"></button></li>
                             <li><input type="search" placeholder="Search"></li>
                         </ul>
                     </div>
