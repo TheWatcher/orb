@@ -31,7 +31,7 @@ use Webperl::Utils qw(join_complex path_join hash_or_hashref);
 use XML::Simple;
 use DateTime;
 use JSON;
-use Data::Dumper;
+
 # Hack the DateTime object to include the TO_JSON function needed to support
 # JSON output of datetime objects. Outputs as ISO8601
 sub DateTime::TO_JSON {
