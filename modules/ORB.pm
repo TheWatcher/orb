@@ -25,6 +25,7 @@ use experimental qw(smartmatch);
 use v5.14;
 
 use parent qw(Webperl::Block); # Features are just a specific form of Block
+use Digest;
 use CGI::Util qw(escape);
 use HTML::Entities;
 use Webperl::Utils qw(join_complex path_join hash_or_hashref);
@@ -292,15 +293,14 @@ sub check_login {
         $self -> log("error:permission", "User does not have perission 'view'");
 
         # Logged in, but permission failed
-        my $message = $self -> message_boc("{L_PERMISSION_FAILED_TITLE}",
-                                           "error",
-                                           "{L_PERMISSION_FAILED_SUMMARY}",
-                                           "{L_PERMISSION_VIEW_DESC}",
-                                           undef,
-                                           "errorcore",
-                                           [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                                  "colour"  => "blue",
-                                                  "action"  => "location.href='{V_[scriptpath]}'"} ]);
+        my $message = $self -> message_box(title   => "{L_PERMISSION_FAILED_TITLE}",
+                                           type    => "error",
+                                           class   => "alert",
+                                           summary => "{L_PERMISSION_FAILED_SUMMARY}",
+                                           message => "{L_PERMISSION_VIEW_DESC}",
+                                           buttons => [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                         "colour"  => "blue",
+                                                         "href"    => "{V_[scriptpath]}"} ]);
 
         return $self -> generate_orb_page(title => "{L_PERMISSION_FAILED_TITLE}",
                                           content => $message);
