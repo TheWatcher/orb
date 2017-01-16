@@ -149,7 +149,7 @@ sub generate_errorbox {
 
     $self -> log("error:fatal", $args -> {"message"});
 
-    return ($args -> {"title"},
+    return ($args -> {"title"} // "{L_FATAL_ERROR}",
             $self -> message_box(title   => $args -> {"title"} // "{L_FATAL_ERROR}",
                                  type    => "error",
                                  class   => "alert",
