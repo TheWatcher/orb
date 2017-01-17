@@ -65,7 +65,7 @@ sub _generate_summaries {
     my $self = shift;
 
     return ("{L_SUMMARY_TITLE}",
-            $self -> {"template"} -> load_template("summary/content.tem", {"%(pagemenu)s" => $self -> pagemenu(),
+            $self -> {"template"} -> load_template("summary/content.tem", {"%(pagemenu)s" => $self -> pagemenu("-"),
                                                                            "%(added)s"    => $self -> _build_summary_list("added"),
                                                                            "%(viewed)s"   => $self -> _build_summary_list("viewed"),
                                                                            "%(updated)s"  => $self -> _build_summary_list("updated"),

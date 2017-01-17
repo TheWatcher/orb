@@ -24,6 +24,7 @@ use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use v5.14;
 
+
 ## @method private % _build_tag($tag)
 # Given a reference to a hash containing tag data, generate HTML to
 # represent the tag
@@ -49,7 +50,7 @@ sub _build_tag {
 # @param recipe A reference to a recipe hash
 # @return A string representing the recipe
 sub _build_recipe {
-    my $self = shift;
+    my $self   = shift;
     my $recipe = shift;
 
     my $temp = "";
@@ -65,10 +66,10 @@ sub _build_recipe {
     # Access to recipe controls is managed by metadata contexts
     my $controls = "";
     if($self -> check_permission("recipe.edit", $recipe -> {"metadata_id"})) {
-        $controls .= $self -> {"template"} -> load_template("list/recipe.tem",
-                                                            { "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
-                                                              "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
-                                                              "%(url-edit)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
+        $controls .= $self -> {"template"} -> load_template("list/controls.tem",
+                                                            { "%(url-edit)s"   => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
+                                                              "%(url-clone)s"  => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
+                                                              "%(url-delete)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
                                                             });
     }
 
@@ -127,19 +128,25 @@ sub _dispatch_ui {
 
     # We need to determine what the page title should be, and the content to shove in it...
     my ($title, $body, $extrahead, $extrajs) = ("", "", "", "");
-    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
-    # If the pathinfo contains a recognised page character, use that
-    if(defined($pathinfo[0]) && $pathinfo[0] =~ /^[0a-zA-Z\$]$/) {
-        ($title, $body, $extrahead, $extrajs) = $self -> _generate_list($pathinfo[0]);
+    if($self -> check_permission("recipe.view")) {
+        my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
-    # If th euser has requested all recipes, do no filtering
-    } elsif($pathinfo[0] && lc($pathinfo[0]) eq "all") {
-        ($title, $body, $extrahead, $extrajs) = $self -> _generate_list();
+        # If the pathinfo contains a recognised page character, use that
+        if(defined($pathinfo[0]) && $pathinfo[0] =~ /^[0a-zA-Z\$]$/) {
+            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list($pathinfo[0]);
 
-    # Otherwise fall back on the default of 'A' recipes
+            # If th euser has requested all recipes, do no filtering
+        } elsif($pathinfo[0] && lc($pathinfo[0]) eq "all") {
+            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list();
+
+            # Otherwise fall back on the default of 'A' recipes
+        } else {
+            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list('A');
+        }
+
     } else {
-        ($title, $body, $extrahead, $extrajs) = $self -> _generate_list('A');
+        ($title, $body) = $self -> generate_errorbox(message => "{L_PERMISSION_FAILED_SUMMARY}");
     }
 
     # Done generating the page content, return the filled in page template
