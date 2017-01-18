@@ -314,32 +314,22 @@ sub set_status {
 sub get_recipe_list {
     my $self      = shift;
     my $mode      = shift;
-    my $exlstates = shift;
+    my $exlstates = shift // [ $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
+                               $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted",
+                             ];
 
     $self -> clear_error();
-
-    if(!defined($exlstates)) {
-        $exlstates = [ $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
-                       $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted",
-                     ];
-    }
 
     my @params = ();
     my @wherefrag = ();
 
     # Get the status IDs for excluded states
-    my @states = ();
-    foreach my $state (@{$exlstates}) {
-        my $statusid = $self -> {"entities"} -> {"states"} -> get_id($state)
-            or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
-
-        push(@states, $statusid);
-    }
+    my $states = $slef -> _convert_states($exlstates);
 
     # And add them to the query
-    if(scalar(@states)) {
-        push(@wherefrag, "`r`.`status_id` NOT IN (?".(",?" x (scalar(@states) - 1)).") ");
-        push(@params, @states);
+    if(scalar(@{$states})) {
+        push(@wherefrag, "`r`.`status_id` NOT IN (?".(",?" x (scalar(@{$states}) - 1)).") ");
+        push(@params, @{$states});
     }
 
     # If a mode has been specified, set up query framents for it
@@ -517,6 +507,10 @@ sub find {
         or return $self -> self_error("Tag lookup error: ".$self -> {"entities"} -> {"tags"} -> errstr());
     $args -> {"tagids"} = $self -> _hashlist_to_list($tags, "id");
 
+    # Find should always exclude deleted and edited recipes
+    my $exclstates = $self -> _convert_state($self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
+                                             $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted");
+
     # Fix up default matching modes
     $args -> {"ingredmatch"} = "all" unless($args -> {"ingredmatch"} && $args -> {"ingredmatch"} eq "any");
     $args -> {"tagmatch"}    = "all" unless($args -> {"tagmatch"}    && $args -> {"tagmatch"} eq "any");
@@ -590,12 +584,21 @@ sub find {
     }
 
     # Build and run the search query
+    # Note that this does something somewhat contraindicated in the docs:
+    # it uses both JOIN ON AND conditions and WHERE conditions, specifically
+    # it filters out a number of states so that they will never appear
+    # in the result set. In theory this should work safely.
     my $query = "SELECT DISTINCT `r`.*, `s`.`name` AS `status`, `t`.`name` AS `type`, `c`.`username`, `c`.`email`, `c`.`realname`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
-                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s` ON `s`.`id` = `r`.`status_id`
-                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t` ON `t`.`id` = `r`.`type_id`
-                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `c` ON `c`.`user_id` = `r`.`creator_id`
-                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `e` ON `e`.`user_id` = `r`.`updater_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"states"}."` AS `s`
+                     ON `s`.`id` = `r`.`status_id`
+                     AND `s`.`id` NOT IN (".join(",", @{$exclstates}).")
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"types"}."` AS `t`
+                     ON `t`.`id` = `r`.`type_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `c`
+                     ON `c`.`user_id` = `r`.`creator_id`
+                 INNER JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `e`
+                     ON `e`.`user_id` = `r`.`updater_id`
                  $joins
                  WHERE $wherecond
                  ORDER BY $order
@@ -945,6 +948,28 @@ sub _hashlist_to_list {
     my @res = map { $_ -> {$field} } @{$hashlist};
 
     return \@res;
+}
+
+
+## @methos private $ _convert_states($states)
+# Given a list, or reference to a list, of state names, generate a
+# matching list of state IDs.
+#
+# @param states A list or reference to a list of state names
+# @return A reference to a list of state IDs matching the provided names
+sub _convert_states {
+    my $self   = shift;
+    my $states = array_or_arrayref(@_);
+
+    my @ids = ();
+    foreach my $state (@{$states}) {
+        my $statusid = $self -> {"entities"} -> {"states"} -> get_id($state)
+            or return $self -> self_error($self -> {"entities"} -> {"states"} -> errstr());
+
+        push(@ids, $statusid);
+    }
+
+    return \@ids;
 }
 
 
