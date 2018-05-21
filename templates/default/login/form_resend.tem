@@ -1,4 +1,4 @@
-            <div class="small-8 small-centered columns">
+            <div class="topspace cell medium-8 medium-offset-2">
 %(error)s
                 <!-- Start resend form -->
                 <div class="resendform callout secondary">
