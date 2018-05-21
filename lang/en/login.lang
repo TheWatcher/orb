@@ -2,6 +2,7 @@ LOGIN_ERR_FATAL = Fatal error
 
 LOGIN_TITLE     = Sign in
 LOGIN_LOGINFORM = Sign in
+LOGIN_LOGOUT    = Sign out
 LOGIN_INTRO     = Enter your username and password to sign in.
 LOGIN_USERNAME  = Username
 LOGIN_PASSWORD  = Password
@@ -33,6 +34,7 @@ LOGIN_SIGNUP_TITLE     = Sign up
 LOGIN_SIGNUP_INTRO     = Create an account by choosing a username and giving a valid email address. A password and activation code will be emailed to you, so you must have access to the email address.
 LOGIN_SIGNUP           = Sign up
 
+LOGIN_ERR_MESSAGE      = Sign in failed
 LOGIN_ERR_NOSELFREG    = Self-registration is not currently permitted.
 LOGIN_ERR_REGFAILED    = Registration failed
 LOGIN_ERR_BADRECAPTCHA = reCAPTCHA information in your request was missing or corrupt
