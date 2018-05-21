@@ -1,0 +1,5 @@
+<div class="cell button-group align-right">
+    <a href="%(url-edit)s"   class="button" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i> {L_VIEW_EDIT}</a>
+    <a href="%(url-clone)s"  class="button" title="Clone"><i class="fa fa-copy" aria-hidden="true"></i> {L_VIEW_CLONE}</a>
+    <a href="%(url-delete)s" class="button alert" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i> {L_VIEW_DELETE}</a>
+</div>

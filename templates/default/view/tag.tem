@@ -1,0 +1,1 @@
+<span class="tag" style="color: %(color)s; background-color: %(bgcol)s" ><i class="fa %(faicon)s"></i> %(name)s</span>

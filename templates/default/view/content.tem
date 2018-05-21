@@ -1,0 +1,52 @@
+<div class="recipe">
+     <div>
+         <h3>%(name)s</h3>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_SOURCE}</div>
+             <div class="cell medium-10 text-left">%(source)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_YIELD}</div>
+             <div class="cell medium-10 text-left">%(yield)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_PREPINFO}</div>
+             <div class="cell medium-10 text-left">%(timereq)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_TIMEREQ}</div>
+             <div class="cell medium-10 text-left">%(timemins)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_OVENTEMP}</div>
+             <div class="cell medium-10 text-left">%(temp)s%(temptype)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_TYPE}</div>
+             <div class="cell medium-10 text-left">%(type)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_STATUS}</div>
+             <div class="cell medium-10 text-left">%(status)s</div>
+         </div>
+         <div class="grid-x grid-margin-x">
+             <div class="cell medium-2  medium-text-right title">{L_VIEW_TAGS}</div>
+             <div class="cell medium-10 text-left">%(tags)s</div>
+         </div>
+     </div>
+     <div class="ingredients">
+         <h4>{L_VIEW_INGREDIENTS}</h4>
+         <ul>
+             %(ingredients)s
+         </ul>
+     </div>
+     <div class="method">
+         <h4>{L_VIEW_METHOD}</h4>
+         <div class="methodtext">%(method)s</div>
+     </div>
+     <div class="notes">
+         <h4>{L_VIEW_NOTES}</h4>
+         <div class="notetext">%(notes)s</div>
+     </div>
+%(controls)s
+</div>

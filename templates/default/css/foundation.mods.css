@@ -25,6 +25,7 @@ div.top-bar-title {
 /* fix menu button pad */
 #menubtn {
     margin-right: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 /* fix padding for menu text with image */

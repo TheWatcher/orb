@@ -1,0 +1,1 @@
+<li class="ingredient">%(quantity)s %(units)s %(prepmethod)s %(ingredient)s %(notes)s</li>

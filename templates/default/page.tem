@@ -6,11 +6,11 @@
         <title>%(title)s</title>
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.css" />
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/foundation/css/foundation.min.css" />
-        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/fontawesome/css/font-awesome.min.css" />
 
         <link rel="stylesheet" href="{V_[csspath]}notebox.css" />
         <link rel="stylesheet" href="{V_[csspath]}messagebox.css" />
         <link rel="stylesheet" href="{V_[csspath]}foundation.mods.css" />
+        <link rel="stylesheet" href="{V_[csspath]}clear-input.css" />
 %(extrahead)s
     </head>
     <body>
@@ -22,13 +22,14 @@
                 <!-- Start top bar -->
 %(userbar)s
                 <!-- End top bar -->
-                <br />
                 <!-- Start content -->
-                <div class="row" id="content">
+                <div class="grid-container fluid">
+%(pagemenu)s
+                <div class="grid-x grid-margin-x" id="content">
 %(content)s
                 </div>
                 <!-- End content -->
-
+                </div>
             </div><!-- content wrapper -->
         </div><!-- canvas wrapper -->
 
@@ -36,7 +37,9 @@
         <script src="{V_[templatepath]}3rdparty/foundation/js/vendor/jquery.js"></script>
         <script src="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.js"></script>
         <script src="{V_[templatepath]}3rdparty/foundation/js/vendor/foundation.min.js"></script>
+        <script src="{V_[templatepath]}3rdparty/fontawesome/js/fontawesome-all.js"></script>
         <script src="{V_[jspath]}foundation.js"></script>
+        <script src="{V_[jspath]}clear-input.js"></script>
         <script>
 %(extrajs)s
         </script>

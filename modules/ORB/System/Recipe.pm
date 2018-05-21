@@ -324,7 +324,7 @@ sub get_recipe_list {
     my @wherefrag = ();
 
     # Get the status IDs for excluded states
-    my $states = $slef -> _convert_states($exlstates);
+    my $states = $self -> _convert_states($exlstates);
 
     # And add them to the query
     if(scalar(@{$states})) {
@@ -508,8 +508,8 @@ sub find {
     $args -> {"tagids"} = $self -> _hashlist_to_list($tags, "id");
 
     # Find should always exclude deleted and edited recipes
-    my $exclstates = $self -> _convert_state($self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
-                                             $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted");
+    my $exclstates = $self -> _convert_states($self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
+                                              $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted");
 
     # Fix up default matching modes
     $args -> {"ingredmatch"} = "all" unless($args -> {"ingredmatch"} && $args -> {"ingredmatch"} eq "any");
@@ -750,11 +750,18 @@ sub _get_ingredients {
 
     $self -> clear_error();
 
-    my $ingh = $self -> {"dbh"} -> prepare("SELECT `ri`.*, `i`.`name`
+    my $ingh = $self -> {"dbh"} -> prepare("SELECT `ri`.*,
+                                                   `i`.`name` AS `ingredient`,
+                                                   `p`.`name` AS `prepmethod`,
+                                                   `u`.`name` AS `units`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"recipeing"}."` AS `ri`
-                                                 `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `i`
-                                            WHERE `i`.`id` = `ri`.`ingred_id`
-                                            AND `ri`.`recipe_id` = ?
+                                            LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"ingredients"}."` AS `i`
+                                               ON `i`.`id` = `ri`.`ingred_id`
+                                            LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"prep"}."` AS `p`
+                                               ON `p`.`id` = `ri`.`prep_id`
+                                            LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"units"}."` AS `u`
+                                               ON `u`.`id` = `ri`.`unit_id`
+                                            WHERE `ri`.`recipe_id` = ?
                                             ORDER BY `ri`.`position`");
     $ingh -> execute($recipeid)
         or return $self -> self_error("Ingredient lookup for '$recipeid' failed: ".$self -> {"dbh"} -> errstr());

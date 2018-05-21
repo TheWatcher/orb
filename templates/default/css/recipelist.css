@@ -1,5 +1,5 @@
 li.recipe {
-    padding: 3px;
+    padding: 5px 3px 3px 3px;
     border-bottom: 1px solid #e7e7e7;
 }
 
@@ -53,4 +53,8 @@ span.ljs-tag {
     margin-right: .3rem;
     border-radius: 0;
     white-space: nowrap;
+}
+
+#recipelist div.input-group-button {
+    margin-bottom: 0px;
 }

@@ -7,4 +7,6 @@ $(function() {
     var recipeList = new List('recipelist', options);
 
     $('#listfilter').delaysearch(recipeList);
+    $('#listfilter').clearable();
+
 });

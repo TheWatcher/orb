@@ -1,4 +1,4 @@
-            <div class="small-8 small-centered columns">
+            <div class="cell small-8 small-offset-2">
                 <table class="notebox notebox-error">
                     <tr>
                         <td class="nbox-image show-for-medium"><img src="{V_[templatepath]}images/error.png" width="48" height="48" alt="error" /></td>

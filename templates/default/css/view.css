@@ -1,0 +1,38 @@
+div.recipe {
+    margin: 0px 1.5rem;
+}
+
+div.recipe h4 {
+    border-bottom: 1px solid #888;
+}
+
+div.title {
+    font-weight: bold;
+}
+
+div.ingredients ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+div.ingredients ul li {
+    list-style: none;
+}
+
+div.ingredients ul li.ingredient {
+    margin-left: 1rem;
+}
+
+div.ingredients ul li.separator {
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+}
+
+.tag {
+    font-size: 0.7rem;
+    display: inline-block;
+    padding: .33333rem .5rem;
+    margin-right: .3rem;
+    border-radius: 0;
+    white-space: nowrap;
+}

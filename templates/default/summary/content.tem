@@ -1,11 +1,10 @@
-%(pagemenu)s
-                    <div class="large-4 columns">
+                    <div class="cell large-auto">
                         <h4>{L_SUMMARY_ADDED}</h4>
                         <table>
     	                    <thead>
 	    	                    <tr>
-		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 	    	                    </tr>
 		                    </thead>
 		                    <tbody>
@@ -14,13 +13,13 @@
 	                    </table>
                     </div>
 
-                    <div class="large-4 columns">
+                    <div class="cell large-auto">
                         <h4>{L_SUMMARY_VIEWED}</h4>
                         <table>
     	                    <thead>
 	    	                    <tr>
-		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 	    	                    </tr>
 		                    </thead>
 		                    <tbody>
@@ -29,13 +28,13 @@
 	                    </table>
                     </div>
 
-                    <div class="large-4 columns">
+                    <div class="cell large-auto">
                         <h4>{L_SUMMARY_UPDATED}</h4>
                         <table>
     	                    <thead>
 	    	                    <tr>
-		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 		    	                    <td class="thead">{L_SUMMARY_TYPE}</td>
+		    	                    <td class="thead">{L_SUMMARY_NAME}</td>
 	    	                    </tr>
 		                    </thead>
 		                    <tbody>
