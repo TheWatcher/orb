@@ -84,6 +84,8 @@ sub _signup_email {
     my $user     = shift;
     my $password = shift;
 
+    $self -> log("login", "Emailing welcome message to $user");
+
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
@@ -123,6 +125,8 @@ sub _lockout_email {
     my $actcode   = shift;
     my $faillimit = shift;
 
+    $self -> log("login", "Sending lockout email to $user");
+
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
@@ -158,6 +162,8 @@ sub _resend_act_email {
     my $user     = shift;
     my $password = shift;
 
+    $self -> log("login", "Sending activation code email to $user");
+
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "login",
@@ -192,6 +198,8 @@ sub _recover_email {
     my $user    = shift;
     my $actcode = shift;
 
+    $self -> log("login", "Sending recovery email to $user");
+
     # Build URLs to place in the email.
     my $reseturl = $self -> build_url("fullurl"  => 1,
                                       "block"    => "login",
@@ -221,6 +229,8 @@ sub _reset_email {
     my $self     = shift;
     my $user     = shift;
     my $password = shift;
+
+    $self -> log("login", "Sending reset email to $user");
 
     # Build URLs to place in the email.
     my $loginform = $self -> build_url("fullurl"  => 1,
