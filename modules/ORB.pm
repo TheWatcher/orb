@@ -129,6 +129,7 @@ sub generate_orb_page {
     return $self -> {"template"} -> load_template("page.tem", {"%(extrahead)s" => $args -> {"extrahead"} // "",
                                                                "%(extrajs)s"   => $args -> {"extrajs"} // "",
                                                                "%(title)s"     => $args -> {"title"} // "",
+                                                               "%(pagemenu)s"  => $self -> pagemenu($args -> {"active"}),
                                                                "%(leftmenu)s"  => $leftbar,
                                                                "%(userbar)s"   => $topbar,
                                                                "%(content)s"   => $args -> {"content"}});
@@ -226,11 +227,16 @@ sub message_box {
 ## @method $ pagemenu($active)
 # Create a page menu to include at the top of pages that need menu listing pages
 #
-# @param active The active page letter, or undef if none are active.
+# @param active The active page letter, and empty string or "all" for all, or
+#               undef if none are active.
 # @return A string containing the page menu
 sub pagemenu {
     my $self   = shift;
-    my $active = shift // "all";
+    my $active = shift;
+
+    return "" if(!defined($active));
+
+    $active ||= "all";
 
     my $pages = "";
     foreach my $page ("0", "A" ... "Z", "All") {

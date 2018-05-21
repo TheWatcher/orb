@@ -104,12 +104,12 @@ sub _generate_list {
     # And build the template fragments from that list
     return ($self -> {"template"} -> replace_langvar("LIST_TITLE", { "%(page)s" => uc($mode // "All") }),
             $self -> {"template"} -> load_template("list/content.tem",
-                                                   { "%(pagemenu)s" => $self -> pagemenu($mode),
-                                                     "%(page)s"     => uc($mode // "All"),
+                                                   { "%(page)s"     => uc($mode // "All"),
                                                      "%(recipes)s"  => join("", map { $self -> _build_recipe($_) } @{$recipes}),
                                                    }),
             $self -> {"template"} -> load_template("list/extrahead.tem"),
             $self -> {"template"} -> load_template("list/extrajs.tem"),
+            uc($mode // "All")
         );
 }
 
@@ -127,22 +127,22 @@ sub _dispatch_ui {
     my $self = shift;
 
     # We need to determine what the page title should be, and the content to shove in it...
-    my ($title, $body, $extrahead, $extrajs) = ("", "", "", "");
+    my ($title, $body, $extrahead, $extrajs, $page) = ("", "", "", "", "all");
 
     if($self -> check_permission("recipe.view")) {
         my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
         # If the pathinfo contains a recognised page character, use that
         if(defined($pathinfo[0]) && $pathinfo[0] =~ /^[0a-zA-Z\$]$/) {
-            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list($pathinfo[0]);
+            ($title, $body, $extrahead, $extrajs, $page) = $self -> _generate_list($pathinfo[0]);
 
             # If th euser has requested all recipes, do no filtering
         } elsif($pathinfo[0] && lc($pathinfo[0]) eq "all") {
-            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list();
+            ($title, $body, $extrahead, $extrajs, $page) = $self -> _generate_list();
 
             # Otherwise fall back on the default of 'A' recipes
         } else {
-            ($title, $body, $extrahead, $extrajs) = $self -> _generate_list('A');
+            ($title, $body, $extrahead, $extrajs, $page) = $self -> _generate_list('A');
         }
 
     } else {
@@ -154,6 +154,7 @@ sub _dispatch_ui {
                                       content   => $body,
                                       extrahead => $extrahead,
                                       extrajs   => $extrajs,
+                                      active    => $page,
                                       doclink   => 'list');
 }
 
