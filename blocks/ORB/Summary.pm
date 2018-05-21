@@ -24,6 +24,7 @@ use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use v5.14;
 
+
 ## @method private $ _build_summary_list($field)
 # Build a list of recipes ordered by the specified field. This will
 # generate a string containing one or more table rows of data for
@@ -65,8 +66,7 @@ sub _generate_summaries {
     my $self = shift;
 
     return ("{L_SUMMARY_TITLE}",
-            $self -> {"template"} -> load_template("summary/content.tem", {"%(pagemenu)s" => $self -> pagemenu("-"),
-                                                                           "%(added)s"    => $self -> _build_summary_list("added"),
+            $self -> {"template"} -> load_template("summary/content.tem", {"%(added)s"    => $self -> _build_summary_list("added"),
                                                                            "%(viewed)s"   => $self -> _build_summary_list("viewed"),
                                                                            "%(updated)s"  => $self -> _build_summary_list("updated"),
                                                    })
@@ -99,6 +99,7 @@ sub _dispatch_ui {
                                       content   => $body,
                                       extrahead => $extrahead,
                                       extrajs   => $extrajs,
+                                      active    => '-',
                                       doclink   => 'summary');
 }
 
