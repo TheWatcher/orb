@@ -340,7 +340,8 @@ sub _validate_signin {
     }
 
     # limiting not supported, or username is bunk - return the failure message as-is
-    return ($self -> {"template"} -> load_template("error/error.tem", { "%(reason)" => $failmsg }), $args);
+    return ($self -> {"template"} -> load_template("error/error.tem", { "%(message)s" => "{L_LOGIN_ERR_MESSAGE}",
+                                                                        "%(reason)s" => $failmsg }), $args);
 }
 
 
@@ -778,7 +779,6 @@ sub _validate_passchange {
 
     # Now apply policy if needed
     my $policy_fails = $self -> {"session"} -> {"auth"} -> apply_policy($user -> {"username"}, $args -> {"newpass"});
-
     if($policy_fails) {
         foreach my $name (@{$policy_fails -> {"policy_order"}}) {
             next if(!$policy_fails -> {$name});
