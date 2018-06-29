@@ -656,7 +656,8 @@ sub _add_ingredients {
 
             my ($unitid, $prepid);
 
-            if($ingred -> {"units"}) {
+            # Set the units, if appropriate (ignore the "None" unit)
+            if($ingred -> {"units"} && $ingred -> {"units"} ne "None") {
                 $unitid = $self -> {"entities"} -> {"units"} -> get_id($ingred -> {"units"})
                     or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"entities"} -> {"units"} -> errstr());
 
