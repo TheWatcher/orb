@@ -1,0 +1,26 @@
+            <li>
+                <div class="grid-x">
+                    <div class="small-1 cell">
+                        <input type="text" placeholder="{L_NEW_ING_QUANT_PH}" value="%(quantity)s" />
+                    </div>
+                    <div class="small-2 cell">
+                        <select>
+%(units)s
+                        </select>
+                    </div>
+                    <div class="small-2 cell">
+                        <select>
+%(preps)s
+                        </select>
+                    </div>
+                    <div class="small-3 cell">
+                        <input type="text" class="ingredient" placeholder="{L_NEW_ING_ING_PH}" value="%(name)s" />
+                    </div>
+                    <div class="small-3 cell">
+                        <input type="text" placeholder="{L_NEW_ING_NOTE_PH}" value="%(notes)s" />
+                    </div>
+                    <div class="small-1 cell">
+                        <button class="button alert deletectrl" type="button" title="{L_NEW_ING_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </li>

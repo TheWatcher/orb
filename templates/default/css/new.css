@@ -1,0 +1,27 @@
+
+#ingredients {
+    margin: 0px;
+    padding: 0px;
+}
+
+#ingredients li {
+    list-style: none;
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    background-repeat: no-repeat;
+    background-image: url('../images/draghandle.png');
+    background-position: left center;
+}
+
+#ingredients li input,
+#ingredients li select,
+#ingredients li button
+{
+    margin: 0px;
+    height: auto;
+}
+
+#ingredients .ui-state-highlight {
+    height: calc(2.75rem - 2px);
+    background-image: none;
+}

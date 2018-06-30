@@ -1,0 +1,47 @@
+NEW_TITLE        = Create Recipe
+
+NEW_NAME         = Name
+NEW_NAME_DOC     = The name of the recipe
+NEW_NAME_PH      = Recipe name
+
+NEW_SOURCE       = Source
+NEW_SOURCE_DOC   = Information about the source this recipe was based on
+NEW_SOURCE_PH    = http://source.url
+
+NEW_YIELD        = Yield
+NEW_YIELD_DOC    = How many servings does this recipe make?
+NEW_YIELD_PH     = X servings
+
+NEW_PREPINFO     = Prep info
+NEW_PREPINFO_DOC = How much time each step of the recipe take?
+NEW_PREPINFO_PH  = 10 min prep + 20 min cook
+
+NEW_TIMEREQ      = Time required
+NEW_TIMEREQ_DOC  = How long does this recipe take in total?
+NEW_TIMEREQ_PH   = 1 hour 10 minutes
+
+NEW_OVENTEMP     = Oven preheat
+NEW_OVENTEMP_DOC = Initial oven temperature (show changes in method)
+NEW_OVENTEMP_PH  = None
+
+NEW_TYPE         = Type
+NEW_STATUS       = Status
+NEW_TAGS         = Tags
+
+NEW_ADD_SEP      = Add Separator
+NEW_ADD_INGRED   = Add Ingredient
+NEW_ADD_INGRED5  = Add 5 Ingredients
+NEW_ADD_INGRED10 = Add 10 Ingredients
+
+
+NEW_INGREDIENTS  = Ingredients
+NEW_ING_QUANT_PH = Quantity
+NEW_ING_ING_PH   = Ingredient
+NEW_ING_NOTE_PH  = Notes
+NEW_ING_SEP_PH   = Separator text
+NEW_ING_DELETE   = Delete
+
+NEW_METHOD       = Method
+NEW_NOTES        = Notes
+
+NEW_CREATE       = Add Recipe
