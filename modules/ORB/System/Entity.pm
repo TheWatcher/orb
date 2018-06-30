@@ -41,6 +41,7 @@ package ORB::System::Entity;
 # - units
 
 use strict;
+use experimental 'smartmatch';
 use parent qw(Webperl::SystemModule);
 use v5.14;
 
@@ -258,6 +259,99 @@ sub find_ids {
         or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
 
     # And return the list of matches
+    return $entityh -> fetchall_arrayref({});
+}
+
+
+## @method $ find($args)
+# Locate an entities that match the specified arguments. Supported values for
+# `args` are:
+#
+# - `term`: the partial entitiy name to search for. This will be wrapped in
+#           wildcard match characters.
+# - `limit`: the maximum number or entities to return. If not supplied, there
+#           is no maximum and all possible matched are returned.
+# - `as`: can be set to `name`, `value`, or `text`. This determines the key
+#         name used for the `name` field of the entities in the results.
+#
+# @param args A hash or reference to a hash of search settings.
+# @return A reference to an array of hashes containing the results, ordered
+#         by entity name.
+sub find {
+    my $self  = shift;
+    my $args  = hash_or_hashref(@_);
+
+    # Wildcard search at both ends might be excessive?
+    my $term = "%".$args -> {"term"}."%";
+
+    # No limit by default
+    my $limit = "";
+    $limit = "LIMIT ".$args -> {"limit"}
+        if(defined($args -> {"limit"}) && $args -> {"limit"} =~ /^\d+$/);
+
+    # What should the name of the 'name' field be in the result?
+    my $as;
+    given($args -> {"as"}) {
+        when("value") { $as = "value"; }
+        when("text")  { $as = "text";  }
+        default       { $as = "name";  }
+    }
+
+    my $search = $self -> {"dbh"} -> prepare("SELECT `id`, `refcount`, `name` AS `$as`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
+                                              WHERE `name` LIKE ?
+                                              ORDER BY `name`,`id`
+                                              $limit");
+    $search -> execute($term)
+        or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
+
+    # And return the list of matches
+    return $search -> fetchall_arrayref({});
+}
+
+
+## @method $ as_options($nameonly, $args)
+# Fetch the entities as a list of options suitable for passing
+# to validators and option list generators.
+#
+# @param nameonly If true, the value and name are set to the same
+#                 value and the id is ignored.
+# @param args A hash, or reference to a hash, containing parameters
+#             to filter the list with. Each key should be a field
+#             name, and the value should be a reference to a hash
+#             containing the value to search for, and optionally
+#             a mode argument to control the matching mode.
+# @return A reference to an array of hashes containing the
+#         entities as { name => name, value => id }s
+sub as_options {
+    my $self     = shift;
+    my $nameonly = shift;
+    my $args     = hash_or_hashref(@_);
+
+    # If any filtering options are provided, convert them to WHERE clauses
+    my @where  = ();
+    my @params = ();
+    foreach my $arg (keys %{$args}) {
+        $args -> {$arg} -> {"mode"} //= '=';
+
+        push(@where, "`$arg` ".$args -> {$arg} -> {"mode"}." ?");
+        push(@params, $args -> {$arg} -> {"value"});
+    }
+
+    my $wherestr = "";
+    $wherestr = "WHERE ".join(" AND ", @where)
+        if(scalar(@where));
+
+    # Allow the name to be the value as well as, well, name.
+    my $field = $nameonly ? "name" : "id";
+
+    my $entityh = $self -> {"dbh"} -> prepare("SELECT `$field` AS `value`, `name`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
+                                               $wherestr
+                                               ORDER BY `name`,`id`");
+    $entityh -> execute(@params)
+        or return $self -> self_error("Unable to perform entity lookup: ".$self -> {"dbh"} -> errstr);
+
     return $entityh -> fetchall_arrayref({});
 }
 
