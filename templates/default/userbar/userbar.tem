@@ -1,8 +1,8 @@
-                <div class="top-bar">
+                <div class="top-bar hide-for-print">
                     <div class="top-bar-left">
                         <ul class="menu">
                             <li><button id="menubtn" class="menu-icon dark" type="button" data-open="offCanvas"></button></li>
-                            <li><input type="search" placeholder="Search"></li>
+                            <li><form action="%(url-search)s" method="POST"><input type="search" placeholder="Search"></form></li>
                         </ul>
                     </div>
                     <div class="top-bar-right show-for-medium">
