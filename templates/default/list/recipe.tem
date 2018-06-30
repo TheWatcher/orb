@@ -4,7 +4,7 @@
                                          <ul class="meta">
                                              <li class="type"><i class="fa fa-book" aria-hidden="true"></i>&nbsp;<span class="ljs-type">%(type)s</span></li>
                                              <li class="status"><i class="fa fa-star" aria-hidden="true"></i>&nbsp;<span class="ljs-status">%(status)s</span></li>
-                                             <li class="time"><i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;<span class="ljs-time">%(time)s</span></li>
+                                             <li class="time"><i class="fa fa-clock" aria-hidden="true"></i>&nbsp;<span class="ljs-time">%(time)s</span></li>
 %(temp)s
                                          </ul>
                                          <div class="tags">%(tags)s</div>
