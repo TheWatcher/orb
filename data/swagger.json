@@ -1,0 +1,184 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ORB API",
+    "description": "REST Interface to recipe information",
+    "version": "1.0.0"
+  },
+  "schemes": [
+    "https"
+  ],
+  "basePath": "/orb/rest/api",
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/token": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request API Token",
+        "description": "Request an API token to use when issuing queries to the REST API. When\ncalling the API programmatically, include this token in the\n'Private-Token' request header field with each request made. Note that\neach call to this endpoint will generate a new API token, invalidating\nany token previously associated with your account.\n\n\n**Required capabilities**: api.use\n",
+        "responses": {
+          "200": {
+            "description": "An API Token",
+            "schema": {
+              "$ref": "#/definitions/Token"
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/ingredients": {
+      "get": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Fetch the list of ingredients",
+        "description": "Retrieve the list of ingredients defined in the system.\n",
+        "parameters": [
+          {
+            "name": "term",
+            "description": "A partial name to search for ingredients with",
+            "in": "query",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of ingredients",
+            "schema": {
+              "$ref": "#/definitions/Ingredients"
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/tags": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Fetch a list of tags defined in the system",
+        "description": "Retrieve the list of tags defined in the system.\n",
+        "parameters": [
+          {
+            "name": "term",
+            "description": "A partial name to search for tags with",
+            "in": "query",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of tags",
+            "schema": {
+              "$ref": "#/definitions/Tags"
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Ingredient": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "The ID of the ingredient in the system"
+        },
+        "text": {
+          "type": "string",
+          "description": "The ingredient name"
+        }
+      }
+    },
+    "Ingredients": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Ingredient"
+      }
+    },
+    "Tag": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "The ID of the tag in the system"
+        },
+        "text": {
+          "type": "string",
+          "description": "The tag name"
+        }
+      }
+    },
+    "Tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Tag"
+      }
+    },
+    "Token": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Unique identifier to pass in the Private-Token header."
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "A short identifying code for the error type"
+        },
+        "message": {
+          "type": "string",
+          "description": "A longer message explaining the cause of the error"
+        }
+      }
+    }
+  }
+}
