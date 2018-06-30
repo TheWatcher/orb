@@ -72,3 +72,31 @@ div.off-canvas .user {
     background: #1779ba;
     color: #fefefe !important;
 }
+
+.has-tip {
+    font-weight: normal;
+}
+
+div.time-duration-picker-content table {
+    margin: 0px;
+}
+
+div.time-duration-picker-content td {
+    padding: 0.2rem;
+}
+
+div.time-duration-picker-content td select {
+    margin: 0px;
+}
+
+.form-left {
+    padding-right: 0.25rem;
+}
+
+.form-right {
+    padding-left: 0.25rem;
+}
+
+.spacer {
+    margin-bottom: 1rem;
+}

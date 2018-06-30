@@ -2,36 +2,36 @@
      <div>
          <h3>%(name)s</h3>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_SOURCE}</div>
-             <div class="cell medium-10 text-left">%(source)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-link hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_SOURCE}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(source)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_YIELD}</div>
-             <div class="cell medium-10 text-left">%(yield)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-utensils hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_YIELD}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(yield)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_PREPINFO}</div>
-             <div class="cell medium-10 text-left">%(timereq)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-tasks hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_PREPINFO}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(timereq)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_TIMEREQ}</div>
-             <div class="cell medium-10 text-left">%(timemins)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-clock hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_TIMEREQ}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(timemins)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_OVENTEMP}</div>
-             <div class="cell medium-10 text-left">%(temp)s%(temptype)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-thermometer-three-quarters hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_OVENTEMP}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(temp)s%(temptype)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_TYPE}</div>
-             <div class="cell medium-10 text-left">%(type)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-book hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_TYPE}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(type)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_STATUS}</div>
-             <div class="cell medium-10 text-left">%(status)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-star hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_STATUS}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(status)s</div>
          </div>
          <div class="grid-x grid-margin-x">
-             <div class="cell medium-2  medium-text-right title">{L_VIEW_TAGS}</div>
-             <div class="cell medium-10 text-left">%(tags)s</div>
+             <div class="cell medium-2 small-1 text-right title"><i class="fa fa-tags hide-for-print hide-for-medium" aria-hidden="true"></i> <span class="show-for-medium">{L_VIEW_TAGS}</span></div>
+             <div class="cell medium-10 small-11 text-left">%(tags)s</div>
          </div>
      </div>
      <div class="ingredients">

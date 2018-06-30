@@ -19,3 +19,7 @@
 .messagebox h4 {
     border-bottom: 1px solid #888;
 }
+
+input.has-tip {
+    border-bottom: 1px solid #cacaca;
+}
