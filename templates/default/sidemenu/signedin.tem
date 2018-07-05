@@ -4,6 +4,7 @@
                 <ul class="vertical menu">
                     <li><a href="%(url-front)s">{L_SIDE_SUMMARIES}</a></li>
                     <li><a href="%(url-list)s" >{L_SIDE_RECIPES}</a></li>
+%(option-new)s
                     <li><a href="%(url-tags)s" >{L_SIDE_TAGS}</a></li>
                     <li><a href="%(url-types)s">{L_SIDE_TYPES}</a></li>
                 </ul>

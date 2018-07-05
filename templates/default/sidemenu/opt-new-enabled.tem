@@ -1,0 +1,1 @@
+                    <li><a href="%(url-new)s" >{L_SIDE_NEW}</a></li>

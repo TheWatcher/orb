@@ -16,6 +16,7 @@ USERBAR_IMPORT          = Import schedule
 SIDE_TITLE              = Online Recipe Book
 SIDE_SUMMARIES          = Summaries
 SIDE_RECIPES            = Recipes
+SIDE_NEW                = Add Recipe
 SIDE_TAGS               = Tags
 SIDE_TYPES              = Types
 SIDE_SHOPPING           = Shopping

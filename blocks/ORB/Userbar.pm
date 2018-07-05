@@ -76,6 +76,11 @@ sub block_display {
                                                          pathinfo => [ ],
                                                          params   => {},
                                                          forcessl => 1),
+                 "%(url-new)s"     => $self -> build_url(block => "new",
+                                                         fullurl  => 1,
+                                                         pathinfo => [ ],
+                                                         params   => {},
+                                                         forcessl => 1),
                  "%(url-tags)s"    => $self -> build_url(block => "tags",
                                                          fullurl  => 1,
                                                          pathinfo => [ ],
@@ -112,10 +117,14 @@ sub block_display {
                                                                 "%(gravhash)s"    => $user -> {"gravatar_hash"},
                                                               });
 
+        my $new = $self -> check_permission("recipe.create") ? "enabled" : "disabled";
+        my $newopt = $self -> {"template"} -> load_template("sidemenu/opt-new-${new}.tem");
+
         $sidemenu = $self -> {"template"} -> load_template("sidemenu/signedin.tem",
-                                                           { "%(realname)s"    => $user -> {"fullname"},
-                                                             "%(username)s"    => $user -> {"username"},
-                                                             "%(gravhash)s"    => $user -> {"gravatar_hash"},
+                                                           { "%(realname)s"   => $user -> {"fullname"},
+                                                             "%(username)s"   => $user -> {"username"},
+                                                             "%(gravhash)s"   => $user -> {"gravatar_hash"},
+                                                             "%(option-new)s" => $newopt,
                                                            });
 
     } else {
