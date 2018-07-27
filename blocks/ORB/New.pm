@@ -20,136 +20,50 @@
 package ORB::New;
 
 use strict;
-use parent qw(ORB); # This class extends the ORB block class
+use parent qw(ORB::Common); # This class extends the ORB common class
 use experimental qw(smartmatch);
 use v5.14;
-
-# How many ingredient rows should appear in the empty form?
-use constant DEFAULT_INGREDIENT_COUNT => 5;
+use JSON;
 
 
-## @method private $ _build_timereq($seconds)
-# Given a time requirement in seconds, generate a string representing
-# the time required in the form "X days, Y hours and Z minues",
-# optionally dropping parts of the string depending on whether
-# X, Y, or Z are zero.
+# ============================================================================
+#  UI handler/dispatcher functions
+
+## @method $ _generate_new()
+# Build the page containing the user creation form.
 #
-# @param seconds The number of seconds required to make the recipe.
-# @return A string representing the seconds.
-sub _build_timereq {
-    my $self    = shift;
-    my $seconds = shift;
-
-    my $days  = int($seconds / (24 * 60 * 60));
-    my $hours = ($seconds / (60 * 60)) % 24;
-    my $mins  = ($seconds / 60) % 60;
-
-    # localisation needed...
-    my @parts = ();
-    push(@parts, "$days days") if($days);
-    push(@parts, "$hours hours") if($hours);
-    push(@parts, "$mins minutes") if($mins);
-
-    my $count = scalar(@parts);
-    if($count == 3) {
-        return $parts[0].", ".$parts[1]." and ".$parts[2];
-    } elsif($count == 2) {
-        return $parts[0]." and ".$parts[1];
-    } elsif($count == 1) {
-        return $parts[0];
-    }
-
-    return "";
-}
-
-
-sub _build_temptypes {
-    my $self    = shift;
-    my $default = shift;
-
-    # Supported types are in the column enum list
-    my $tempenum  = $self -> get_enum_values($self -> {"settings"} -> {"database"} -> {"recipes"}, "temptype");
-    return $tempenum
-        unless(ref($tempenum) eq "ARRAY");
-
-    # convert to something build_optionlist will understand
-    map { $_ = { name  => $_, value => $_ } } @{$tempenum};
-
-    return $self -> {"template"} -> build_optionlist($tempenum, $default);
-}
-
-
-sub _get_units {
-    my $self = shift;
-
-    return $self -> {"units"}
-        if($self -> {"units"});
-
-    $self -> {"units"} = [
-        { value => "None", name => "None" },
-        @{ $self -> {"system"} -> {"entities"} -> {"units"}  -> as_options(1) }
-    ];
-
-    return $self -> {"units"};
-}
-
-
-sub _build_ingredients {
-    my $self  = shift;
-    my $args  = shift;
-    my $units = shift;
-    my $preps = shift;
-
-    my @ingreds = ();
-
-    # If any ingredients are present in the argument list, push them into templated strings
-    if($args -> {"ingredients"} && scalar(@{$args -> {"ingredients"}})) {
-        foreach my $ingred (@{$args -> {"ingredients"}}) {
-            # Ensure we never try to deal with undef elements in the array
-            next unless($ingred);
-
-            # Which template to use depends on whether this is a separator
-            my $template = $ingred -> {"separator"} ? "new/separator.tem" : "new/ingredient.tem";
-
-            my $unitopts = $self -> {"template"} -> build_optionlist($units, $args -> {"units"});
-            my $prepopts = $self -> {"template"} -> build_optionlist($preps, $args -> {"prep"});
-
-            push(@ingreds,
-                 $self -> {"template"} -> load_template($template,
-                                                        { "%(quantity)s" => $ingred -> {"quantity"},
-                                                          "%(name)s"     => $ingred -> {"name"},
-                                                          "%(notes)s"    => $ingred -> {"notes"},
-                                                          "%(units)s"    => $unitopts,
-                                                          "%(preps)s"    => $prepopts,
-                                                        }));
-        }
-
-    # if the ingredient list is empty, generate some empties
-    } else {
-        # Only need to calculate these once for the empty ingredients
-        my $unitopts = $self -> {"template"} -> build_optionlist($units);
-        my $prepopts = $self -> {"template"} -> build_optionlist($preps);
-
-        for(my $i = 0; $i < DEFAULT_INGREDIENT_COUNT; ++$i) {
-            push(@ingreds,
-                 $self -> {"template"} -> load_template("new/ingredient.tem",
-                                                        { "%(quantity)s" => "",
-                                                          "%(name)s"     => "",
-                                                          "%(notes)s"    => "",
-                                                          "%(units)s"    => $unitopts,
-                                                          "%(preps)s"    => $prepopts,
-                                                        }));
-        }
-    }
-
-    return join("", @ingreds);
-}
-
-
+# @return An array containing the page title, content, extra header data, and
+#         extra javascript content.
 sub _generate_new {
     my $self = shift;
     my ($args, $errors);
 
+    # User must have recipe create to proceed.
+    return $self -> _fatal_error("{L_PERMISSION_FAILED_SUMMARY}")
+        unless($self -> check_permission('recipe.create'));
+
+    if($self -> {"cgi"} -> param("newrecipe")) {
+        $self -> log("recipe.new", "User has submitted data for new recipe");
+
+        # Do all the validation, and if there's no errors then add the recipe
+        ($args, $errors) = $self -> _validate_recipe();
+        if(!$errors) {
+            # No errors, try adding the recipe
+            $args -> {"creatorid"} = $self -> {"session"} -> get_session_userid();
+            $args -> {"id"} = $self -> {"system"} -> {"recipe"} -> create($args)
+                or $errors = $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                    { "%(error)s" => $self -> {"system"} -> {"recipe"} -> errstr() });
+
+            # Did the addition work? If so, send the user to the view page for the new recipe
+            return $self -> redirect($self -> build_url(block    => "view",
+                                                        pathinfo => [ $args -> {"id"} ],
+                                                        params   => "",
+                                                        api      => []))
+                if(!$errors);
+        }
+    }
+
+    # Wrap the errors if there are any
     if($errors) {
         $self -> log("new", "Errors detected in addition: $errors");
 
@@ -158,16 +72,17 @@ sub _generate_new {
         $errors = $self -> {"template"} -> load_template("error/page_error.tem", { "%(message)s" => $errorlist });
     }
 
-    # Prebuild arrays for units and prep methods
-    my $units = $self -> _get_units();
-    my $preps = $self -> {"system"} -> {"entities"} -> {"prep"} -> as_options(1);
+    # Prebuild arrays for temptypes, units, and prep methods
+    my $temptypes = $self -> _build_temptypes();
+    my $units     = $self -> _get_units();
+    my $preps     = $self -> _get_prepmethods();
 
     # And convert them to optionlists for the later template call
     my $unitopts   = $self -> {"template"} -> build_optionlist($units);
     my $prepopts   = $self -> {"template"} -> build_optionlist($preps);
 
     # Build the list of ingredients
-    my $ingredients = $self -> _build_ingredients($args, $units, $preps);
+    my $ingredients = $self -> _build_ingredients($args);
 
     # Build up the type and status data
     my $typeopts   = $self -> {"template"} -> build_optionlist($self -> {"system"} -> {"entities"} -> {"types"}  -> as_options(),
@@ -183,6 +98,16 @@ sub _generate_new {
         $timemins = $self -> _build_timereq($timesecs);
     }
 
+    # Convert tags - can't use build_optionlist because all of them need to be selected.
+    my $taglist = "";
+    if($args -> {"tags"}) {
+        my @tags = split(/,/, $args -> {"tags"});
+
+        foreach my $tag (@tags) {
+            $taglist .= "<option selected=\"selected\">$tag</option>\n";
+        }
+    }
+
     # And squirt out the page content
     my $body  = $self -> {"template"} -> load_template("new/content.tem",
                                                        {
@@ -194,11 +119,12 @@ sub _generate_new {
                                                            "%(timemins)s"  => $timemins,
                                                            "%(timesecs)s"  => $timesecs,
                                                            "%(temp)s"      => $args -> {"temp"} // "",
-                                                           "%(temptypes)s" => $self -> _build_temptypes($args -> {"temptype"}),
+                                                           "%(temptypes)s" => $self -> {"template"} -> build_optionlist($temptypes, $args -> {"temptype"}),
                                                            "%(types)s"     => $typeopts,
                                                            "%(units)s"     => $unitopts,
                                                            "%(preps)s"     => $prepopts,
                                                            "%(status)s"    => $statusopts,
+                                                           "%(tags)s"      => $taglist,
                                                            "%(ingreds)s"   => $ingredients,
                                                            "%(method)s"    => $args -> {"method"} // "",
                                                            "%(notes)s"     => $args -> {"notes"} // "",
@@ -210,9 +136,6 @@ sub _generate_new {
             $self -> {"template"} -> load_template("new/extrajs.tem"));
 }
 
-
-# ============================================================================
-#  UI handler/dispatcher functions
 
 ## @method private @ _fatal_error($error)
 # Generate the tile and content for an error page.
