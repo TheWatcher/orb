@@ -1,38 +1,38 @@
 %(errors)s
 <div class="small-8 small-offset-2 cell">
-    <form class="nomargin" method="POST" id="newgrade">
+    <form class="nomargin" method="POST" id="newrecipe">
         <h4 class="underscore">{L_NEW_TITLE}</h4>
         <div>
-            <label>{L_NEW_NAME}
-                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_NAME_DOC}" type="text" id="name" name="name" value="%(name)s" placeholder="{L_NEW_NAME_PH}" required />
+            <label>{L_RECIPE_NAME}
+                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_NAME_DOC}" type="text" id="name" name="name" value="%(name)s" placeholder="{L_RECIPE_NAME_PH}" required />
             </label>
         </div>
         <div>
-            <label>{L_NEW_SOURCE}
-                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_SOURCE_DOC}" type="text" id="source" name="source" value="%(source)s" placeholder="{L_NEW_SOURCE_PH}" required />
+            <label>{L_RECIPE_SOURCE}
+                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_SOURCE_DOC}" type="text" id="source" name="source" value="%(source)s" placeholder="{L_RECIPE_SOURCE_PH}" />
             </label>
         </div>
         <div>
-            <label>{L_NEW_YIELD}
-                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_YIELD_DOC}" type="text" id="yeild" name="yield" value="%(yield)s" placeholder="{L_NEW_YIELD_PH}" />
+            <label>{L_RECIPE_YIELD}
+                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_YIELD_DOC}" type="text" id="yeild" name="yield" value="%(yield)s" placeholder="{L_RECIPE_YIELD_PH}" />
             </label>
         </div>
         <div>
-            <label>{L_NEW_PREPINFO}
-                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_PREPINFO_DOC}" type="text" id="timereq" name="timereq" value="%(timereq)s" placeholder="{L_NEW_PREPINFO_PH}" required />
+            <label>{L_RECIPE_PREPINFO}
+                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPINFO_DOC}" type="text" id="timereq" name="timereq" value="%(timereq)s" placeholder="{L_RECIPE_PREPINFO_PH}" required />
             </label>
         </div>
         <div>
-            <label>{L_NEW_TIMEREQ}
-                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_TIMEREQ_DOC}" type="text" id="timemins" name="timemins" value="%(timemins)s" placeholder="{L_NEW_TIMEREQ_PH}" />
-                <input type="hidden" name="timesecs" value="0" id="timesecs" value="%(timesecs)s" />
+            <label>{L_RECIPE_TIMEREQ}
+                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_TIMEREQ_DOC}" type="text" id="timemins" name="timemins" value="%(timemins)s" placeholder="{L_RECIPE_TIMEREQ_PH}" />
+                <input type="hidden" name="timesecs" id="timesecs" value="%(timesecs)s" />
             </label>
         </div>
         <div>
-            <label>{L_NEW_OVENTEMP}
+            <label>{L_RECIPE_OVENTEMP}
                 <div class="grid-x">
                     <div class="small-6 cell">
-                        <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_NEW_OVENTEMP_DOC}" type="number" id="temp" name="temp" value="%(temp)s" placeholder="{L_NEW_OVENTEMP_PH}" />
+                        <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_OVENTEMP_DOC}" type="number" id="temp" name="temp" value="%(temp)s" placeholder="{L_RECIPE_OVENTEMP_PH}" />
                     </div>
                     <div class="small-6 cell">
                         <select id="temptype" name="temptype">
@@ -44,14 +44,14 @@
         </div>
         <div class="grid-x">
             <div class="medium-6 cell form-left">
-                <label>{L_NEW_TYPE}
+                <label>{L_RECIPE_TYPE}
                     <select id="type" name="type">
 %(types)s
                     </select>
                 </label>
             </div>
             <div class="medium-6 cell form-right">
-                <label>{L_NEW_STATUS}
+                <label>{L_RECIPE_STATUS}
                     <select id="status" name="status">
 %(status)s
                     </select>
@@ -59,7 +59,7 @@
             </div>
         </div>
         <div class="spacer">
-            <label>{L_NEW_TAGS}
+            <label>{L_RECIPE_TAGS}
                 <select id="tags" name="tags" size="1" multiple="multiple">
 %(tags)s
                 </select>
@@ -68,29 +68,30 @@
         <ul id="ingredients">
 %(ingreds)s
         </ul>
+        <input type="hidden" id="ingdata" name="ingdata" />
         <div class="button-group">
-            <button type="button" class="button" id="addsep" >{L_NEW_ADD_SEP}</button>
-            <button type="button" class="button adding" data-count="1">{L_NEW_ADD_INGRED}</button>
+            <button type="button" class="button" id="addsep" >{L_RECIPE_ADD_SEP}</button>
+            <button type="button" class="button adding" data-count="1">{L_RECIPE_ADD_INGRED}</button>
             <a class="dropdown button arrow-only" data-toggle="count-dropdown">
                 <span class="show-for-sr">Show menu</span>
             </a>
             <div class="dropdown-pane bottom float-left" id="count-dropdown" data-dropdown data-auto-focus="true">
                 <ul class="menu vertical">
-                    <li><button type="button" class="adding" data-count="5" data-toggle="count-dropdown">{L_NEW_ADD_INGRED5}</button></li>
-                    <li><button type="button" class="adding" data-count="10" data-toggle="count-dropdown">{L_NEW_ADD_INGRED10}</button></li>
+                    <li><button type="button" class="adding" data-count="5" data-toggle="count-dropdown">{L_RECIPE_ADD_INGRED5}</button></li>
+                    <li><button type="button" class="adding" data-count="10" data-toggle="count-dropdown">{L_RECIPE_ADD_INGRED10}</button></li>
                 </ul>
             </div>
         </div>
 
         <div class="spacer">
-            <label>{L_NEW_METHOD}
+            <label>{L_RECIPE_METHOD}
                 <textarea id="method" name="method">
 %(method)s
                 </textarea>
             </label>
         </div>
         <div class="spacer">
-            <label>{L_NEW_NOTES}
+            <label>{L_RECIPE_NOTES}
                 <textarea id="notes" name="notes">
 %(notes)s
                 </textarea>
@@ -98,7 +99,7 @@
         </div>
 
         <div class="clearfix">
-            <input type="submit" name="newgrade" class="button float-right" value="{L_NEW_CREATE}" />
+            <input type="submit" name="newrecipe" class="button float-right" value="{L_NEW_CREATE}" />
         </div>
     </form>
 </div>
@@ -106,33 +107,33 @@
     <li class="ingred">
         <div class="grid-x">
             <div class="small-1 cell">
-                <input type="text" placeholder="Quantity">
+                <input class="quantity" type="text" placeholder="{L_RECIPE_ING_QUANT_PH}" value="%(quantity)s" />
             </div>
             <div class="small-2 cell">
-                <select>
-                    %(units)s
+                <select class="units">
+%(units)s
                 </select>
             </div>
             <div class="small-2 cell">
-                <select>
-                    %(preps)s
+                <select class="preps">
+%(preps)s
                 </select>
             </div>
             <div class="small-3 cell">
-                <input type="text" class="ingredient" placeholder="Ingredient">
+                <input type="text" class="ingredient" placeholder="{L_RECIPE_ING_ING_PH}" />
             </div>
             <div class="small-3 cell">
-                <input type="text" placeholder="Notes">
+                <input type="text" class="notes" placeholder="{L_RECIPE_ING_NOTE_PH}" />
             </div>
             <div class="small-1 cell">
-                <button class="button alert deletectrl" type="button" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                <button class="button alert deletectrl" type="button" title="{L_RECIPE_ING_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i></button>
             </div>
         </div>
     </li>
     <li class="separator">
         <div class="grid-x">
             <div class="small-11 cell">
-                <input type="text" placeholder="Separator text">
+                <input type="text" class="separator" placeholder="Separator text">
             </div>
             <div class="small-1 cell">
                 <button class="button alert deletectrl" type="button" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>

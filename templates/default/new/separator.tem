@@ -1,10 +1,10 @@
     <li class="separator">
         <div class="grid-x">
             <div class="small-11 cell">
-                <input type="text" placeholder="{L_NEW_ING_SEP_PH}" value="%(name)s" />
+                <input type="text" placeholder="{L_RECIPE_ING_SEP_PH}" value="%(name)s" />
             </div>
             <div class="small-1 cell">
-                <button class="button alert deletectrl" type="button" title="{L_NEW_ING_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                <button class="button alert deletectrl" type="button" title="{L_RECIPE_ING_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i></button>
             </div>
         </div>
     </li>
