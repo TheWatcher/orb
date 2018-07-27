@@ -657,7 +657,7 @@ sub _add_ingredients {
             my ($unitid, $prepid);
 
             # Set the units, if appropriate (ignore the "None" unit)
-            if($ingred -> {"units"} && $ingred -> {"units"} ne "None") {
+            if($ingred -> {"units"} && lc($ingred -> {"units"}) ne "none") {
                 $unitid = $self -> {"entities"} -> {"units"} -> get_id($ingred -> {"units"})
                     or return $self -> self_error("Unable to get unit ID for '".$ingred -> {"units"}."': ".$self -> {"entities"} -> {"units"} -> errstr());
 
@@ -665,7 +665,8 @@ sub _add_ingredients {
                     or return $self -> self_error("Unit refcount error: ".$self -> {"entities"} -> {"ingredients"} -> errstr());
             }
 
-            if($ingred -> {"prep"}) {
+            # Likewise for preparation methods
+            if($ingred -> {"prep"} && lc($ingred -> {"units"}) ne "none") {
                 $prepid = $self -> {"entities"} -> {"prep"} -> get_id($ingred -> {"prep"})
                     or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
 
