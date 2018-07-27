@@ -243,15 +243,15 @@ sub edit {
 
     # Move the old recipe to the end of the table, but keep a record
     # of its current ID
-    $args -> {"id"}     = $args -> {"previd"};
-    $args -> {"previd"} = $self -> _renumber_recipe($args -> {"previd"});
+    $args -> {"id"} = $args -> {"previd"};
+    my $renumbered  = $self -> _renumber_recipe($args -> {"id"});
 
     # Create a new one at the old ID
     $self -> create($args)
         or return undef;
 
     # Set the status of the edited recipe
-    $self -> set_status($args -> {"previd"},
+    $self -> set_status($renumbered,
                         $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
                         $args -> {"updaterid"})
         or return undef;
