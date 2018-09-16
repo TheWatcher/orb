@@ -304,13 +304,13 @@ sub _validate_ingredient {
 
     # Units and prep method are option lists, so check them
     ($ingredient -> {"units"}, $error) = $self -> _validate_ingredient_option($ingdata -> {"units"},
-                                                                              "{L_NEW_UNITS}",
+                                                                              "{L_RECIPE_UNITS}",
                                                                               $self -> _get_units());
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
     ($ingredient -> {"prep"}, $error) = $self -> _validate_ingredient_option($ingdata -> {"prep"},
-                                                                              "{L_NEW_PREP}",
+                                                                              "{L_RECIPE_PREP}",
                                                                               $self -> _get_prepmethods());
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
@@ -335,7 +335,7 @@ sub _validate_ingredients {
 
     ($args -> {"ingdata"}, $error) = $self -> validate_string("ingdata", { required   => 1,
                                                                            default    => "",
-                                                                           nicename   => "{L_NEW_INGREDIENTS}",
+                                                                           nicename   => "{L_RECIPE_INGREDIENTS}",
                                                                            encode     => 0,
                                                              });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
@@ -370,63 +370,75 @@ sub _validate_recipe {
     my $self      = shift;
     my ($args, $error, $errors) = ( {}, "", "" );
 
-    # <label>{L_NEW_NAME}
+    # <label>{L_RECIPE_NAME}
     ($args -> {"name"}, $error) = $self -> validate_string("name", { required   => 1,
                                                                      default    => "",
                                                                      minlen     => 4,
                                                                      maxlen     => 80,
-                                                                     nicename   => "{L_NEW_NAME}",
+                                                                     nicename   => "{L_RECIPE_NAME}",
                                                                      formattest => $self -> {"formats"} -> {"recipename"},
                                                                      formatdesc => "{L_ERR_NAMEFORMAT}"
                                                            });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_SOURCE}
+    # <label>{L_RECIPE_SOURCE}
     ($args -> {"source"}, $error) = $self -> validate_string("source", { required   => 0,
                                                                          default    => "",
                                                                          maxlen     => 255,
-                                                                         nicename   => "{L_NEW_SOURCE}"
+                                                                         nicename   => "{L_RECIPE_SOURCE}"
                                                              });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_YIELD}
+    # <label>{L_RECIPE_YIELD}
     ($args -> {"yield"}, $error) = $self -> validate_string("yield", { required   => 0,
                                                                        default    => "",
                                                                        maxlen     => 80,
-                                                                       nicename   => "{L_NEW_SOURCE}"
+                                                                       nicename   => "{L_RECIPE_SOURCE}"
                                                             });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_PREPINFO}
+    # <label>{L_RECIPE_PREPINFO}
     ($args -> {"timereq"}, $error) = $self -> validate_string("timereq", { required   => 0,
                                                                            default    => "",
                                                                            maxlen     => 255,
-                                                                           nicename   => "{L_NEW_PREPINFO}"
+                                                                           nicename   => "{L_RECIPE_PREPINFO}"
                                                               });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_TIMEREQ}
-    ($args -> {"timesecs"}, $error) = $self -> validate_numeric("timesecs", { required => 1,
+    # <label>{L_RECIPE_PREPTIME}
+    ($args -> {"prepsecs"}, $error) = $self -> validate_numeric("prepsecs", { required => 1,
                                                                               default  => 0,
                                                                               intonly  => 1,
                                                                               min      => 1,
-                                                                              nicename => "{L_NEW_TIMEREQ}"
+                                                                              nicename => "{L_RECIPE_PREPTIME}"
                                                                 });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    $args -> {"timemins"} = int($args -> {"timesecs"} / 60);
+    $args -> {"preptime"} = int($args -> {"prepsecs"} / 60);
+
+    # <label>{L_RECIPE_COOKTIME}
+    ($args -> {"cooksecs"}, $error) = $self -> validate_numeric("cooksecs", { required => 1,
+                                                                              default  => 0,
+                                                                              intonly  => 1,
+                                                                              min      => 1,
+                                                                              nicename => "{L_RECIPE_COOKTIME}"
+                                                                });
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
+        if($error);
+
+    $args -> {"cooktime"} = int($args -> {"cooksecs"} / 60);
 
 
-    # <label>{L_NEW_OVENTEMP}
+    # <label>{L_RECIPE_OVENTEMP}
     ($args -> {"temp"}, $error) = $self -> validate_numeric("temp", { required => 0,
                                                                       default  => 0,
                                                                       intonly  => 1,
-                                                                      nicename => "{L_NEW_OVENTEMP}"
+                                                                      nicename => "{L_RECIPE_OVENTEMP}"
                                                             });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
@@ -435,32 +447,32 @@ sub _validate_recipe {
     ($args -> {"temptype"}, $error) = $self -> validate_options("temptype", { required => 0,
                                                                               default  => "N/A",
                                                                               source   => $temptypes,
-                                                                              nicename => "{L_NEW_OVENTEMP}"
+                                                                              nicename => "{L_RECIPE_OVENTEMP}"
                                                                });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
 
-    # <label>{L_NEW_TYPE}
+    # <label>{L_RECIPE_TYPE}
     my $types = $self -> {"system"} -> {"entities"} -> {"types"} -> as_options();
     ($args -> {"type"}, $error) = $self -> validate_options("type", { required => 1,
                                                                       source   => $types,
-                                                                      nicename => "{L_NEW_TYPE}"
+                                                                      nicename => "{L_RECIPE_TYPE}"
                                                                });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
 
-    # <label>{L_NEW_STATUS}
+    # <label>{L_RECIPE_STATUS}
     my $states = $self -> {"system"} -> {"entities"} -> {"states"} -> as_options(0, visible => {value => 1});
     ($args -> {"status"}, $error) = $self -> validate_options("status", { required => 1,
                                                                           source   => $states,
-                                                                          nicename => "{L_NEW_STATUS}"
+                                                                          nicename => "{L_RECIPE_STATUS}"
                                                                });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_TAGS}
+    # <label>{L_RECIPE_TAGS}
     my @tags = $self -> {"cgi"} -> multi_param("tags");
     my @taglist = ();
     foreach my $tag (@tags) {
@@ -477,19 +489,19 @@ sub _validate_recipe {
     $errors .= $self -> _validate_ingredients($args);
 
 
-     # <label>{L_NEW_METHOD}
-    ($args -> {"method"}, $error) = $self -> validate_string("method", { required   => 1,
-                                                                         default    => "",
-                                                                         minlen     => 4,
-                                                                         nicename   => "{L_NEW_METHOD}",
+     # <label>{L_RECIPE_METHOD}
+    ($args -> {"method"}, $error) = $self -> validate_htmlarea("method", { required   => 1,
+                                                                           default    => "",
+                                                                           minlen     => 4,
+                                                                           nicename   => "{L_RECIPE_METHOD}",
                                                              });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    # <label>{L_NEW_NOTES}
-    ($args -> {"notes"}, $error) = $self -> validate_string("notes", { required   => 0,
-                                                                       default    => "",
-                                                                       nicename   => "{L_NEW_NOTES}"
+    # <label>{L_RECIPE_NOTES}
+    ($args -> {"notes"}, $error) = $self -> validate_htmlarea("notes", { required   => 0,
+                                                                         default    => "",
+                                                                         nicename   => "{L_RECIPE_NOTES}"
                                                              });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
