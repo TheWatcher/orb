@@ -28,6 +28,7 @@ use JSON;
 # How many ingredient rows should appear in the empty form?
 use constant DEFAULT_INGREDIENT_COUNT => 5;
 
+use Data::Dumper;
 
 # ============================================================================
 #  Page generation support functions
@@ -266,9 +267,9 @@ sub _validate_ingredient {
     my $ingdata = shift;
     my ($error, $errors)  = ("", "");
 
-    # Do nothing unless something has been set for the quantity and name
+    # Do nothing unless something has been set for the name
     return ""
-        unless($ingdata -> {"quantity"} && $ingdata -> {"name"});
+        unless($ingdata -> {"name"});
 
     # Start accumulating ingredient data here
     my $ingredient = {
@@ -277,11 +278,13 @@ sub _validate_ingredient {
     };
 
     # Quantity valid?
-    if($ingdata -> {"quantity"} =~ /^\d+(\.\d+)?$/) {
-        $ingredient -> {"quantity"} = $ingdata -> {"quantity"};
-    } else {
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem",
-                                                          { "%(error)s" => "{L_ERR_BADQUANTITY}" });
+    if($ingdata -> {"quantity"}) {
+        if($ingdata -> {"quantity"} =~ /$self->{formats}->{quantity}/) {
+            $ingredient -> {"quantity"} = $ingdata -> {"quantity"};
+        } else {
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem",
+                                                              { "%(error)s" => "{L_ERR_BADQUANTITY}" });
+        }
     }
 
     # Name valid?
@@ -353,6 +356,7 @@ sub _validate_ingredients {
             $errors .= $self -> _validate_ingredient($args, $ingred);
         }
     }
+    print STDERR "Out: ",Dumper($args -> {"ingredients"})."\n";
 
     return $errors;
 }
@@ -401,10 +405,10 @@ sub _validate_recipe {
         if($error);
 
     # <label>{L_RECIPE_PREPINFO}
-    ($args -> {"timereq"}, $error) = $self -> validate_string("timereq", { required   => 0,
-                                                                           default    => "",
-                                                                           maxlen     => 255,
-                                                                           nicename   => "{L_RECIPE_PREPINFO}"
+    ($args -> {"prepinfo"}, $error) = $self -> validate_string("prepinfo", { required   => 0,
+                                                                             default    => "",
+                                                                             maxlen     => 255,
+                                                                             nicename   => "{L_RECIPE_PREPINFO}"
                                                               });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
@@ -454,7 +458,7 @@ sub _validate_recipe {
 
 
     # <label>{L_RECIPE_TYPE}
-    my $types = $self -> {"system"} -> {"entities"} -> {"types"} -> as_options();
+    my $types = $self -> {"system"} -> {"entities"} -> {"types"} -> as_options(1);
     ($args -> {"type"}, $error) = $self -> validate_options("type", { required => 1,
                                                                       source   => $types,
                                                                       nicename => "{L_RECIPE_TYPE}"
@@ -464,7 +468,7 @@ sub _validate_recipe {
 
 
     # <label>{L_RECIPE_STATUS}
-    my $states = $self -> {"system"} -> {"entities"} -> {"states"} -> as_options(0, visible => {value => 1});
+    my $states = $self -> {"system"} -> {"entities"} -> {"states"} -> as_options(1, visible => {value => 1});
     ($args -> {"status"}, $error) = $self -> validate_options("status", { required => 1,
                                                                           source   => $states,
                                                                           nicename => "{L_RECIPE_STATUS}"
