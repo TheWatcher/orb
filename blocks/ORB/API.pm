@@ -93,9 +93,14 @@ sub _build_token_response {
 }
 
 
-
 ## @method private $ _build_ingredients_response()
-#
+# Fetch the list of igredients in the system, limited to 100 possible matches
+# at a time if doing a search. By default this will return a list of all
+# ingredients in the system as an array of hashes containing `id` and `value`
+# keys, where `id` is the ID of the ingredient, and `value` is the name of the
+# ingredient. If a 'term' query parameter has been set when invoking the API,
+# that is used to search through the ingredients in the system to produce a
+# list of at most 100 ingredients that include the term.
 #
 # @api GET /ingredients
 #
@@ -103,6 +108,7 @@ sub _build_token_response {
 sub _build_ingredients_response {
     my $self = shift;
 
+    # If the user is doing a GET, they're listing ingredients
     if($self -> {"cgi"} -> request_method() eq "GET") {
         my ($term, $error) = $self -> validate_string("term", { required => 0,
                                                                 default  => undef,
@@ -116,9 +122,10 @@ sub _build_ingredients_response {
 
         $self -> log("api:ingredients", "Fetching ingredients - term = ".($term // "not set"));
 
+        # If no term is set, return ALL THE THINGS
         return $self -> {"system"} -> {"entities"} -> {"ingredients"} -> find(term  => $term,
                                                                               as    => "value",
-                                                                              limit => 100);
+                                                                              limit => $term ? 100 : undef);
     }
 
     return $self -> api_errorhash("bad_request", $self -> {"template"} -> replace_langvar("API_BAD_REQUEST"));
@@ -126,7 +133,11 @@ sub _build_ingredients_response {
 
 
 ## @method private $ _build_tags_response()
-#
+# Fetch the list of tags defined in the system. This will return the list of
+# tags as an array of hashes, where each tag is a hash with the keys `id`
+# for the tag ID, and `text` for the tag name. If an optional `term` parameter
+# is set when invoking the API, this will return at most 100 tags that include
+# the term specified.
 #
 # @api GET /tags
 #
@@ -134,6 +145,7 @@ sub _build_ingredients_response {
 sub _build_tags_response {
     my $self = shift;
 
+    # If the user is doing a GET, they're listing tags
     if($self -> {"cgi"} -> request_method() eq "GET") {
         my ($term, $error) = $self -> validate_string("term", { required => 0,
                                                                 default  => undef,
@@ -215,6 +227,7 @@ sub page_display {
         # API call - dispatch to appropriate handler.
         given($apiop) {
             when("ingredients") { return $self -> api_response($self -> _build_ingredients_response()); }
+            when("recipes")     { return $self -> api_response($self -> _build_recipes_response());     }
             when("tags")        { return $self -> api_response($self -> _build_tags_response());        }
             when("token")       { return $self -> api_response($self -> _build_token_response());       }
 
