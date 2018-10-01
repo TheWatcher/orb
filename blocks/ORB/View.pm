@@ -25,6 +25,20 @@ use experimental qw(smartmatch);
 use Regexp::Common qw(URI);
 use v5.14;
 
+## @method private $ _resolve_recipe_name($rid)
+# Given a recipe name, locate the recipe with that name if possible.
+# If rid is purely numeric, this assumes it's already just an ID and
+# returns it as-is, otherwise this will search for the recipe and
+# return the ID of the recipe, or undef if it can't be found.
+sub _resolve_recipe_name {
+    my $self = shift;
+    my $rid  = shift;
+
+    return $rid if($rid =~ /^\d+$/);
+
+
+}
+
 
 ## @method private $ _generate_ingredients($ingreds)
 # Given an array of ingredients, convert them to a list of ingredients
@@ -112,6 +126,11 @@ sub _convert_source {
 sub _generate_view {
     my $self = shift;
     my $rid  = shift;
+
+    # If the rid is not numeric, assume it's a name and convert
+    $rid = $self -> _resolve_recipe_name($rid);
+    return $self -> _fatal_error("{L_VIEW_ERROR_NORECIPE}")
+        unless($rid);
 
     # Try to fetch the data.
     my $recipe = $self -> {"system"} -> {"recipe"} -> get_recipe($rid);
