@@ -71,6 +71,16 @@ sub new {
                                         @_)
         or return undef;
 
+    # Formats of accepted types
+    $self -> {"formats"} = {
+        "recipename" => '^[-\w,. ]+$',
+        "tags"       => '^[-\w ]+$',
+        "quantity"   => '^[\d\w./]+$',
+        "sepname"    => '^[-\w,. ]{1,255}$',
+        "ingredient" => '^[-\w,. ]{1,255}$',
+        "notes"      => '^[-()\w,. ]{1,255}$',
+    };
+
     return $self;
 }
 

@@ -80,6 +80,44 @@
         }
       }
     },
+    "/recipes": {
+      "get": {
+        "tags": [
+          "recipe"
+        ],
+        "summary": "Fetch a list of recipes defined in the system",
+        "description": "Retrieve the list of recipes defined in the system.\n",
+        "parameters": [
+          {
+            "name": "name",
+            "description": "A name to search for recipes with",
+            "in": "query",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of recipes",
+            "schema": {
+              "$ref": "#/definitions/Recipes"
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/tags": {
       "get": {
         "tags": [
@@ -137,6 +175,15 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/Ingredient"
+      }
+    },
+    "Recipe": {
+      "type": "object"
+    },
+    "Recipes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Recipe"
       }
     },
     "Tag": {

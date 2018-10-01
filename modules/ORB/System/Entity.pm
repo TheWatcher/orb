@@ -273,6 +273,8 @@ sub find_ids {
 #           is no maximum and all possible matched are returned.
 # - `as`: can be set to `name`, `value`, or `text`. This determines the key
 #         name used for the `name` field of the entities in the results.
+# - `id`: can be set to `name` or `id`. This determines whether the entity name
+#         or id is used as the id in the data.
 #
 # @param args A hash or reference to a hash of search settings.
 # @return A reference to an array of hashes containing the results, ordered
@@ -297,7 +299,13 @@ sub find {
         default       { $as = "name";  }
     }
 
-    my $search = $self -> {"dbh"} -> prepare("SELECT `id`, `refcount`, `name` AS `$as`
+    my $id;
+    given($args -> {"id"}) {
+        when("name") { $id = "name"; }
+        default      { $id = "id";   }
+    }
+
+    my $search = $self -> {"dbh"} -> prepare("SELECT `$id` AS `id`, `refcount`, `name` AS `$as`
                                               FROM `".$self -> {"settings"} -> {"database"} -> {$self -> {"entity_table"}}."`
                                               WHERE `name` LIKE ?
                                               ORDER BY `name`,`id`

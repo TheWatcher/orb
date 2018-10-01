@@ -18,9 +18,13 @@ RECIPE_PREPINFO     = Prep info
 RECIPE_PREPINFO_DOC = How much time each step of the recipe take?
 RECIPE_PREPINFO_PH  = 10 min prep + 20 min cook
 
-RECIPE_TIMEREQ      = Time required
-RECIPE_TIMEREQ_DOC  = How long does this recipe take in total?
-RECIPE_TIMEREQ_PH   = 1 hour 10 minutes
+RECIPE_PREPTIME      = Preparation time required
+RECIPE_PREPTIME_DOC  = How long does this recipe take to prepare?
+RECIPE_PREPTIME_PH   = 30 minutes
+
+RECIPE_COOKTIME      = Cooking time required
+RECIPE_COOKTIME_DOC  = How long does this recipe take to cook?
+RECIPE_COOKTIME_PH   = 30 minutes
 
 RECIPE_OVENTEMP     = Oven preheat
 RECIPE_OVENTEMP_DOC = Initial oven temperature (show changes in method)

@@ -1,3 +1,21 @@
+var CKCONFIG = {
+    font_names: 'Arial/Arial, Helvetica, sans-serif;' +
+        'Book Antiqua/Book Antiqua, serif;'+
+        'Cambria/Cambria, serif;'+
+	    'Courier New/Courier New, Courier, monospace;' +
+	    'Georgia/Georgia, serif;' +
+	    'Lucida Sans Unicode/Lucida Sans Unicode, Lucida Grande, sans-serif;' +
+	    'Tahoma/Tahoma, Geneva, sans-serif;' +
+	    'Times New Roman/Times New Roman, Times, serif;' +
+	    'Trebuchet MS/Trebuchet MS, Helvetica, sans-serif;' +
+	    'Verdana/Verdana, Geneva, sans-serif'
+};
+
+function check_name()
+{
+    var $name = $('#name').val();
+
+}
 
 
 function add_separator()
@@ -22,8 +40,43 @@ function add_ingredient(count)
 }
 
 
+function build_ingdata()
+{
+    var values = new Array();
+
+    // Go through all the children of the ingredient list
+    // storing the value therein in elements of the values list
+    $('#ingredients').children().each(function() {
+
+        // Is this a separator row?
+        if($(this).hasClass('separator')) {
+            var name = $(this).find('input.separator').val();
+
+            values.push({ "separator": true,
+                          "name": name });
+        } else {
+            var quantity = $(this).find('input.quantity').val();
+            var units    = $(this).find('select.units').val();
+            var prep     = $(this).find('select.preps').val();
+            var name     = $(this).find('input.ingredient').val();
+            var notes    = $(this).find('input.notes').val();
+
+            values.push({ "separator": false,
+                          "quantity": quantity,
+                          "units": units,
+                          "prep": prep,
+                          "name": name,
+                          "notes": notes });
+
+        }
+    });
+
+    $('#ingdata').val(JSON.stringify({ "ingredients": values }));
+}
+
+
 $(function() {
-    $('#timemins').timeDurationPicker({
+    $('#preptime').timeDurationPicker({
         lang: 'en_US',
         seconds: false,
         minutes: true,
@@ -32,8 +85,22 @@ $(function() {
         months: false,
         years: false,
         onSelect: function(element, seconds, humanDuration) {
-            $('#timemins').val(humanDuration);
-            $('#timesecs').val(seconds);
+            $('#preptime').val(humanDuration);
+            $('#prepsecs').val(seconds);
+            console.log(seconds, humanDuration);
+        }
+    });
+    $('#cooktime').timeDurationPicker({
+        lang: 'en_US',
+        seconds: false,
+        minutes: true,
+        hours: true,
+        days: true,
+        months: false,
+        years: false,
+        onSelect: function(element, seconds, humanDuration) {
+            $('#cooktime').val(humanDuration);
+            $('#cooksecs').val(seconds);
             console.log(seconds, humanDuration);
         }
     });
@@ -51,8 +118,8 @@ $(function() {
         }
     });
 
-    CKEDITOR.replace('method');
-    CKEDITOR.replace('notes');
+    CKEDITOR.replace('method', CKCONFIG);
+    CKEDITOR.replace('notes', CKCONFIG);
 
     $('#ingredients').sortable({
         placeholder: "ui-state-highlight"
@@ -71,4 +138,7 @@ $(function() {
     $('.deletectrl').on('click', function() {
         $(this).parents('li').fadeOut(300, function() { $(this).remove(); });
     });
+
+    // Build the ingredient list before submitting
+    $('#newrecipe').on('submit', function() { build_ingdata(); return true });
 });

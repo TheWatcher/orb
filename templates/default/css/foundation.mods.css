@@ -65,7 +65,8 @@ div.off-canvas .user {
 
 .pagemenu > li > a {
     width: 2rem;
-    padding: 0.75rem 0.75rem;
+    padding: 0.25rem 0.25rem;
+    display: inline-block;
 }
 
 .pagemenu > li.active > a {
@@ -99,4 +100,8 @@ div.time-duration-picker-content td select {
 
 .spacer {
     margin-bottom: 1rem;
+}
+
+div.topspace {
+    margin-top: 0.5rem;
 }

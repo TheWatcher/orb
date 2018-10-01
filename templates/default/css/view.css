@@ -1,5 +1,6 @@
 div.recipe {
     margin: 0px 1.5rem;
+    width: 100%;
 }
 
 div.recipe h4 {
@@ -8,6 +9,7 @@ div.recipe h4 {
 
 div.title {
     font-weight: bold;
+    white-space: nowrap;
 }
 
 div.ingredients ul {
@@ -24,6 +26,7 @@ div.ingredients ul li.ingredient {
 }
 
 div.ingredients ul li.separator {
+    margin-left: 1rem;
     font-weight: bold;
     border-bottom: 1px solid #ccc;
 }

@@ -17,40 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class Recipe
-# +-------------+--------------------------------+------+-----+----------------+
-# | Field       | Type                           | Null | Key | Extra          |
-# +-------------+--------------------------------+------+-----+----------------+
-# | id          | int(10) unsigned               | NO   | PRI | auto_increment |
-# | prev_id     | int(11)                        | YES  |     |                |
-# | metadata_id | int(11)                        | NO   |     |                |
-# | name        | varchar(80)                    | NO   | UNI |                |
-# | method      | text                           | NO   |     |                |
-# | notes       | text                           | YES  |     |                |
-# | source      | varchar(255)                   | YES  |     |                |
-# | yield       | varchar(80)                    | NO   |     |                |
-# | timereq     | varchar(255)                   | NO   |     |                |
-# | timemins    | int(10) unsigned               | NO   | MUL |                |
-# | temptype    | enum('C','F','Gas mark','N/A') | NO   |     |                |
-# | temp        | smallint(5) unsigned           | YES  |     |                |
-# | type_id     | int(10) unsigned               | NO   | MUL |                |
-# | status_id   | int(10) unsigned               | NO   | MUL |                |
-# | creator_id  | int(10) unsigned               | NO   |     |                |
-# | created     | int(10) unsigned               | NO   | MUL |                |
-# | viewed      | int(10) unsigned               | NO   |     |                |
-# +-------------+--------------------------------+------+-----+----------------+
-
-# +-----------+------------------+------+-----+----------------+
-# | Field     | Type             | Null | Key | Extra          |
-# +-----------+------------------+------+-----+----------------+
-# | id        | int(10) unsigned | NO   | PRI | auto_increment |
-# | recipe_id | int(10) unsigned | NO   | MUL |                |
-# | unit_id   | int(10) unsigned | YES  |     |                |
-# | prep_id   | int(10) unsigned | YES  |     |                |
-# | ingred_id | int(10) unsigned | YES  |     |                |
-# | quantity  | varchar(8)       | YES  |     |                |
-# | notes     | varchar(255)     | YES  |     |                |
-# | separator | varchar(255)     | YES  |     |                |
-# +-----------+------------------+------+-----+----------------+
+# FIXME: corrected table schema here
 #
 #
 
@@ -107,16 +74,14 @@ sub clear {
 #
 # -          `id`: (optional, avoid) Set the ID to create the recipe with.
 #                  This should generally not be specified unless doing edits.
-# -      `previd`: (optional) ID of the recipe this is an edit of. If specified,
-#                  the old recipe has its state set to 'edited', and the
-#                  metadata context of the new recipe is created as a child of
-#                  the old recipe to ensure editing works as expected. Generally
+# -      `origid`: (optional) ID of the recipe this is an edit of. Generally
 #                  this will not be specified directly; if editing a recipe,
 #                  call edit() to have renumbering handled for you.
 # -        `name`: The name of the recipe
 # -      `source`: (optional) Where did the recipe come from originally?
-# -     `timereq`: (optional) A string describing the time required for the recipe
-# -    `timemins`: How long does the recipe take in minutes, in total?
+# -    `prepinfo`: (optional) A string describing the time required for the recipe
+# -    `preptime`: How long does the recipe take to prepare in minutes?
+# -    `cooktime`: How long does the recipe take to cook in minutes?
 # -       `yield`: A string describing how much stuff the recipe creates
 # -        `temp`: (optional) Oven preheat temperature
 # -    `temptype`: The type of units used: 'C', 'F', 'Gas mark', or 'N/A'
@@ -170,19 +135,20 @@ sub create {
         unless($args -> {"created"});
 
     # We need a metadata context for the recipe
-    my $metadataid = $self -> _create_recipe_metadata($args -> {"previd"});
+    my $metadataid = $self -> _create_recipe_metadata($args -> {"origid"});
 
     # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                            (`id`, `metadata_id`, `prev_id`, `name`, `source`, `timereq`, `timemins`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
+                                            (`id`, `metadata_id`, `original_id`, `name`, `source`, `prepinfo`, `preptime`, `cooktime`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
     my $result = $newh -> execute($args -> {"id"},
                                   $metadataid,
-                                  $args -> {"previd"},
+                                  $args -> {"origid"},
                                   $args -> {"name"},
                                   $args -> {"source"},
-                                  $args -> {"timereq"},
-                                  $args -> {"timemins"},
+                                  $args -> {"prepinfo"},
+                                  $args -> {"preptime"},
+                                  $args -> {"cooktime"},
                                   $args -> {"yield"},
                                   $args -> {"temp"},
                                   $args -> {"temptype"},
@@ -200,7 +166,8 @@ sub create {
     return $self -> self_error("No rows added when inserting recipe.")
         if($result eq "0E0");
 
-    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+    # If we explicitly set an ID above, use it here rather than looking it up
+    my $newid = $args -> {"id"} // $self -> {"dbh"} -> {"mysql_insertid"};
 
     return $self -> self_error("Unable to obtain id for new recipe")
         if(!$newid);
@@ -228,7 +195,7 @@ sub create {
 # updated recipe overwrites the data at the old ID).
 #
 # @param args This should be a reference to a hash containing the same
-#             elements as the args hash for create(), except previd is
+#             elements as the args hash for create(), except origid is
 #             required here. This should also contain the field
 #             `updaterid` containing the ID of the user doing the edit.
 # @return The recipe Id on success, undef on error.
@@ -238,15 +205,16 @@ sub edit {
 
     $self -> clear_error();
 
-    return $self -> self_error("edit called without previous recipe ID")
-        unless($args -> {"previd"});
+    return $self -> self_error("edit called without master recipe ID")
+        unless($args -> {"origid"});
 
-    # Move the old recipe to the end of the table, but keep a record
-    # of its current ID
-    $args -> {"id"} = $args -> {"previd"};
-    my $renumbered  = $self -> _renumber_recipe($args -> {"id"});
+    # We want the new recipe to get the same ID as the old one, so record it
+    $args -> {"id"} = $args -> {"origid"};
 
-    # Create a new one at the old ID
+    # Now move the old recipe out of the way so the new one can use its ID
+    my $renumbered = $self -> _renumber_recipe($args -> {"id"});
+
+    # Create the new recipe at the old ID
     $self -> create($args)
         or return undef;
 
@@ -255,6 +223,8 @@ sub edit {
                         $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
                         $args -> {"updaterid"})
         or return undef;
+
+
 
     return $args -> {"id"};
 }
@@ -291,6 +261,31 @@ sub set_status {
 
     return $self -> self_error("No rows modified when updating recipe state.")
         if($result eq "0E0");
+
+    return 1;
+}
+
+
+## @method $ set_viewed($recipeid, $viewerid)
+# Update the 'viewed' timestamp for a recipe to show that a user has
+# viewed it.
+#
+# @param recipeid The ID of the recipe that has been viewed.
+# @param viewerid The ID of the user doing the viewing.
+# @return true on success, undef on error.
+sub set_viewed {
+    my $self     = shift;
+    my $recipeid = shift;
+    my $viewerid = shift;
+
+    $self -> clear_error();
+
+    my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
+                                               SET `viewed` = UNIX_TIMESTAMP()
+                                               WHERE `id` = ?");
+    my $result = $updateh -> execute($recipeid);
+    return $self -> self_error("Update of recipe failed: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("Recipe update failed: no rows updated") if($result eq "0E0");
 
     return 1;
 }
@@ -474,6 +469,8 @@ sub load_recipe_relations {
 # - `tagmatch`: control how tag searching works. As with `ingredmatch`, this
 #           may be "all" or "any", with corresponding behaviour.
 # - `limit`: how many recipies may be returned by the find()
+# - `original`: if set to true (the default) only search the most recent versions
+#            of recipes. If false, include edits.
 # - `offset`: offset from the start of the query results.
 # - `order`: optional ordering of results. Allowed values are 'added', 'updated',
 #            'viewed', or 'name' (the default).
@@ -561,7 +558,16 @@ sub find {
     }
 
     # Squish all the where conditions into a string
-    my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where) || "1";
+    my $wherecond = join(($args -> {"searchmode"} eq "any" ? "\nOR " : "\nAND "), @where);
+
+    # Unless `original` is false, we can only match the most recent edits
+    unless(defined($args -> {"original"}) && !$args -> {"original"}) {
+        $wherecond .= "\nAND" if($wherecond);
+        $wherecond .= "`r`.`original_id` IS NULL";
+    }
+
+    # Allow for no search criteria
+    $wherecond = "1" unless($wherecond);
 
     # Construct the limit term when limit (and optionally offset) are
     # specified by the caller
@@ -666,7 +672,7 @@ sub _add_ingredients {
             }
 
             # Likewise for preparation methods
-            if($ingred -> {"prep"} && lc($ingred -> {"units"}) ne "none") {
+            if($ingred -> {"prep"} && lc($ingred -> {"prep"}) ne "none") {
                 $prepid = $self -> {"entities"} -> {"prep"} -> get_id($ingred -> {"prep"})
                     or return $self -> self_error("Unable to get preparation method ID for '".$ingred -> {"prep"}."': ".$self -> {"entities"} -> {"prep"} -> errstr());
 
@@ -814,8 +820,8 @@ sub _renumber_recipe {
 
     # Duplicate the source recipe at the end of the table
     my $moveh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                            (`metadata_id`, `prev_id`, `name`, `method`, `notes`, `source`, `yield`, `timereq`, `timemins`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`)
-                                                SELECT `metadata_id`, `prev_id`, `name`, `method`, `notes`, `source`, `yield`, `timereq`, `timemins`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`
+                                            (`metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`)
+                                                SELECT `metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`
                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                                 WHERE `id` = ?");
     my $rows = $moveh -> execute($sourceid);
@@ -826,6 +832,7 @@ sub _renumber_recipe {
     my $newid = $self -> {"dbh"} -> {"mysql_insertid"}
         or return $self -> self_error("Unable to obtain id for new recipe");
 
+    # Move all the old ingredient and tage relations to the copy we've just made
     $self -> _fix_recipe_relations($sourceid, $newid)
         or return undef;
 
@@ -869,6 +876,13 @@ sub _fix_recipe_relations {
                                           WHERE `recipe_id` = ?");
     $moveh -> execute($destid, $sourceid)
         or return $self -> self_error("Ingredient relation fixup failed: ".$self -> {"dbh"} -> errstr());
+
+    # And set the original ID in the renumbered recipe
+    my $origh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
+                                             SET `original_id` = ?
+                                             WHERE `id` = ?");
+    $origh -> execute($sourceid, $destid)
+        or return $self -> self_error("Ingredient origin fixup failed: ".$self -> {"dbh"} -> errstr());
 
     return 1;
 }
@@ -1028,5 +1042,10 @@ sub _where_fragment {
     push(@{$params}, $value);
 
     return $frag;
+}
+
+
+sub _multi_where_fragment {
+    my $self = shift;
 }
 1;

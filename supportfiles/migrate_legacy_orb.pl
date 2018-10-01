@@ -11,6 +11,42 @@ use Webperl::ConfigMicro;
 use ORB::System;
 use Data::Dumper;
 
+## @fn void clear_target_tables($dbh, $settings)
+# Empty out tables in the new ORB database to allow easier reimport.
+#
+# @param dbh A reference to the new ORB database handle.
+sub clear_target_tables {
+    my $dbh      = shift;
+    my $settings = shift;
+
+    # The tables to truncate
+    my @truncate = (
+        'convert',
+        'ingredients',
+        'prep',
+        'recipes',
+        'recipeing',
+        'recipetags',
+        'states',
+        'tags',
+        'types',
+        'units'
+        );
+
+    foreach my $table (@truncate) {
+        $dbh -> do("TRUNCATE `".$settings -> {"database"} -> {$table}."`")
+            or die "Truncate failed: ".$dbh -> errstr."\n";
+    }
+
+    $dbh -> do("DELETE FROM `".$settings -> {"database"} -> {"metadata"}."`
+                WHERE `id` > 1")
+        or die "Metadata cleanup failed: ".$dbh -> errstr."\n";
+
+    $dbh -> do("ALTER TABLE `".$settings -> {"database"} -> {"metadata"}."`
+                AUTO_INCREMENT = 2")
+        or die "Metadata autoinc set failed: ".$dbh -> errstr."\n";
+}
+
 
 ## @fn $ get_source_recipeids($dbh, $settings, $logger)
 # Fetch a list of recipie IDs in the source ORB database.
@@ -174,8 +210,10 @@ sub convert_recipe {
     $recipe -> {"created"}   = $recipe -> {"updated"};
 
     # And fix up fields that need to do name mapping
-    $recipe -> {"type"}   = $recipe -> {"typename"};
-    $recipe -> {"status"} = $recipe -> {"statusname"};
+    $recipe -> {"type"}     = $recipe -> {"typename"};
+    $recipe -> {"status"}   = $recipe -> {"statusname"};
+    $recipe -> {"prepinfo"} = $recipe -> {"timereq"};
+    $recipe -> {"cooktime"} = $recipe -> {"timemins"};
 
     # And go through the list of ingredients tweaking as needed
     foreach my $ingred (@{$recipe -> {"ingredients"}}) {
@@ -188,6 +226,9 @@ sub convert_recipe {
             $ingred -> {"separator"} = 0;
         }
     }
+
+    # Nuke the source id
+    delete $recipe -> {"id"};
 
     return $recipe;
 }
@@ -221,6 +262,8 @@ my $system = ORB::System -> new(dbh      => $newdbh,
 
 $system -> init()
     or $logger -> die_log(undef, $system -> errstr());
+
+clear_target_tables($newdbh, $targetcfg);
 
 my $rows = get_source_recipeids($olddbh, $legacycfg, $logger);
 

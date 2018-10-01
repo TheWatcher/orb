@@ -19,13 +19,19 @@
         </div>
         <div>
             <label>{L_RECIPE_PREPINFO}
-                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPINFO_DOC}" type="text" id="timereq" name="timereq" value="%(timereq)s" placeholder="{L_RECIPE_PREPINFO_PH}" required />
+                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPINFO_DOC}" type="text" id="prepinfo" name="prepinfo" value="%(prepinfo)s" placeholder="{L_RECIPE_PREPINFO_PH}" required />
             </label>
         </div>
         <div>
-            <label>{L_RECIPE_TIMEREQ}
-                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_TIMEREQ_DOC}" type="text" id="timemins" name="timemins" value="%(timemins)s" placeholder="{L_RECIPE_TIMEREQ_PH}" />
-                <input type="hidden" name="timesecs" id="timesecs" value="%(timesecs)s" />
+            <label>{L_RECIPE_PREPTIME}
+                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPTIME_DOC}" type="text" id="preptime" name="preptime" value="%(preptime)s" placeholder="{L_RECIPE_PREPTIME_PH}" autocomplete="off" />
+                <input type="hidden" name="prepsecs" id="prepsecs" value="%(prepsecs)s" />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_COOKTIME}
+                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_COOKTIME_DOC}" type="text" id="cooktime" name="cooktime" value="%(cooktime)s" placeholder="{L_RECIPE_COOKTIME_PH}" autocomplete="off" />
+                <input type="hidden" name="cooksecs" id="cooksecs" value="%(cooksecs)s" />
             </label>
         </div>
         <div>

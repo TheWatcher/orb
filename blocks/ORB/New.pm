@@ -85,17 +85,23 @@ sub _generate_new {
     my $ingredients = $self -> _build_ingredients($args);
 
     # Build up the type and status data
-    my $typeopts   = $self -> {"template"} -> build_optionlist($self -> {"system"} -> {"entities"} -> {"types"}  -> as_options(),
+    my $typeopts   = $self -> {"template"} -> build_optionlist($self -> {"system"} -> {"entities"} -> {"types"}  -> as_options(1),
                                                                $args -> {"type"});
 
-    my $statusopts = $self -> {"template"} -> build_optionlist($self -> {"system"} -> {"entities"} -> {"states"} -> as_options(0, visible => {value => 1}),
+    my $statusopts = $self -> {"template"} -> build_optionlist($self -> {"system"} -> {"entities"} -> {"states"} -> as_options(1, visible => {value => 1}),
                                                                $args -> {"status"});
 
     # Convert the time fields
-    my ($timemins, $timesecs) = ("", 0);
-    if($args -> {"timemins"}) {
-        $timesecs = $args -> {"timemins"} * 60;
-        $timemins = $self -> _build_timereq($timesecs);
+    my ($preptime, $prepsecs) = ("", 0);
+    if($args -> {"preptime"}) {
+        $prepsecs = $args -> {"preptime"} * 60;
+        $preptime = $self -> _build_timereq($prepsecs);
+    }
+
+    my ($cooktime, $cooksecs) = ("", 0);
+    if($args -> {"cooktime"}) {
+        $cooksecs = $args -> {"cooktime"} * 60;
+        $cooktime = $self -> _build_timereq($cooksecs);
     }
 
     # Convert tags - can't use build_optionlist because all of them need to be selected.
@@ -115,9 +121,11 @@ sub _generate_new {
                                                            "%(name)s"      => $args -> {"name"} // "",
                                                            "%(source)s"    => $args -> {"source"} // "",
                                                            "%(yield)s"     => $args -> {"yield"} // "",
-                                                           "%(timereq)s"   => $args -> {"timereq"} // "",
-                                                           "%(timemins)s"  => $timemins,
-                                                           "%(timesecs)s"  => $timesecs,
+                                                           "%(prepinfo)s"  => $args -> {"prepinfo"} // "",
+                                                           "%(preptime)s"  => $preptime,
+                                                           "%(prepsecs)s"  => $prepsecs,
+                                                           "%(cooktime)s"  => $cooktime,
+                                                           "%(cooksecs)s"  => $cooksecs,
                                                            "%(temp)s"      => $args -> {"temp"} // "",
                                                            "%(temptypes)s" => $self -> {"template"} -> build_optionlist($temptypes, $args -> {"temptype"}),
                                                            "%(types)s"     => $typeopts,

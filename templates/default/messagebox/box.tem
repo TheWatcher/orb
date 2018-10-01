@@ -1,4 +1,4 @@
-            <div class="small-8 small-centered columns">
+            <div class="topspace cell small-8 small-offset-2">
                 <!-- Start messagebox core -->
                 <div class="messagebox callout %(class)s">
                     <h4>%(title)s</h4>

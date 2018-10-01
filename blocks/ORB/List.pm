@@ -73,6 +73,8 @@ sub _build_recipe {
                                                             });
     }
 
+    my $time = ($recipe -> {"preptime"} + $recipe -> {"cooktime"}) * 60;
+
     return $self -> {"template"} -> load_template("list/recipe.tem",
                                                   { "%(id)s"       => $recipe -> {"id"},
                                                     "%(url-view)s" => $self -> build_url(block    => "view",
@@ -80,7 +82,7 @@ sub _build_recipe {
                                                     "%(name)s"     => $recipe -> {"name"},
                                                     "%(type)s"     => $recipe -> {"type"},
                                                     "%(status)s"   => $recipe -> {"status"},
-                                                    "%(time)s"     => $self -> {"template"} -> humanise_seconds($recipe -> {"timemins"} * 60, 1),
+                                                    "%(time)s"     => $self -> {"template"} -> humanise_seconds($time, 1),
                                                     "%(temp)s"     => $temp,
                                                     "%(tags)s"     => join("", map { $self -> _build_tag($_) } @{$recipe -> {"tags"}}),
                                                     "%(controls)s" => $controls,
