@@ -1,4 +1,4 @@
                                 <tr>
-                                    <td>%(type)s</td>
+                                    <td class="title">%(type)s</td>
                                     <td><a href="%(url)s">%(name)s</a></td>
                                 </tr>

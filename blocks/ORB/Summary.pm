@@ -69,7 +69,8 @@ sub _generate_summaries {
             $self -> {"template"} -> load_template("summary/content.tem", {"%(added)s"    => $self -> _build_summary_list("added"),
                                                                            "%(viewed)s"   => $self -> _build_summary_list("viewed"),
                                                                            "%(updated)s"  => $self -> _build_summary_list("updated"),
-                                                   })
+                                                   }),
+            $self -> {"template"} -> load_template("summary/extrahead.tem"),
         );
 }
 
