@@ -154,14 +154,29 @@ sub _generate_view {
                                                                                                   pathinfo => [ $recipe -> {"id"} ]),
                                                        });
 
+    my $preptime  = $recipe -> {"preptime"} ? $self -> {"template"} -> humanise_seconds($recipe -> {"preptime"} * 60)
+                                            : "{L_VIEW_NOTSET}";
+    my $cooktime  = $recipe -> {"cooktime"} ? $self -> {"template"} -> humanise_seconds($recipe -> {"cooktime"} * 60)
+                                            : "{L_VIEW_NOTSET}";
+
+    my $totaltime = $recipe -> {"preptime"} + $recipe -> {"cooktime"};
+    my $timereq   = $totaltime ? $self -> {"template"} -> humanise_seconds($totaltime * 60)
+                               : "{L_VIEW_NOTSET}";
+
+    # Mark the recipe as viewed
+    $self -> {"system"} -> {"recipe"} -> set_viewed($rid, $self -> {"session"} -> get_session_userid());
+    $self -> log("recipe:view", "Recipe $rid viewed by user ".$self -> {"session"} -> get_session_userid());
+
     # and build the page itself
     my $body  = $self -> {"template"} -> load_template("view/content.tem",
                                                        {
                                                            "%(name)s"        => $title,
                                                            "%(source)s"      => $source,
                                                            "%(yield)s"       => $recipe -> {"yield"},
-                                                           "%(timereq)s"     => $recipe -> {"timereq"},
-                                                           "%(timemins)s"    => $self -> {"template"} -> humanise_seconds($recipe -> {"timemins"} * 60),
+                                                           "%(prepinfo)s"    => $recipe -> {"prepinfo"},
+                                                           "%(preptime)s"    => $preptime,
+                                                           "%(cooktime)s"    => $cooktime,
+                                                           "%(timereq)s"     => $timereq,
                                                            "%(temp)s"        => $recipe -> {"temp"} ? $recipe -> {"temp"} : "",
                                                            "%(temptype)s"    => $recipe -> {"temptype"} // "",
                                                            "%(type)s"        => $recipe -> {"type"},
