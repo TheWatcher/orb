@@ -1,0 +1,24 @@
+                        <div id="recipelist" class="cell">
+                            <div class="column row clearfix">
+                                <div class="small input-group nomargin">
+                                    <input type="search" class="input-group-field" id="listfilter" placeholder="{L_LIST_FILTER}" />
+                                    <div class="input-group-button button-group">
+                                        <button class="button" type="button" data-toggle="sort-dropdown">{L_LIST_SORT}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-pane" id="sort-dropdown" data-dropdown data-auto-focus="true">
+                                <ul class="menu">
+                                    <li><button class="button sort" data-sort="ljs-name">{L_LIST_NAME}</button></li>
+                                    <li><button class="button sort" data-sort="ljs-type">{L_LIST_TYPE}</button></li>
+                                    <li><button class="button sort" data-sort="ljs-status">{L_LIST_STATUS}</button></li>
+                                </ul>
+                            </div>
+                            <ul class="list recipes">
+%(recipes)s
+                            </ul>
+                        </div>
+                        <div id="errormodal" class="small reveal" data-reveal>
+                            <div><img src="{V_[templatepath]}images/error.png" width="48" height="48" alt="error" /> <span id="errortext"></span></div>
+                            <div><button class="button alert float-right nomargin" data-close aria-label="Close">{L_LIST_OKAY}</button></div>
+                        </div>

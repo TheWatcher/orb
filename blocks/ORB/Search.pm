@@ -23,8 +23,100 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use v5.14;
+## @method private % _build_tag($tag)
+# Given a reference to a hash containing tag data, generate HTML to
+# represent the tag
+#
+# @param tag A reference to a tag hash
+# @return A string representing the tag
+sub _build_tag {
+    my $self = shift;
+    my $tag  = shift;
 
-sub
+    return $self -> {"template"} -> load_template("search/tag.tem", { "%(name)s"   => $tag -> {"name"},
+                                                                      "%(color)s"  => $tag -> {"color"},
+                                                                      "%(bgcol)s"  => $tag -> {"background"},
+                                                                      "%(faicon)s" => $tag -> {"fa-icon"}
+                                                  });
+}
+
+
+## @method private % _build_recipe($recipe)
+# Given a reference to a hash containing recipe data, generate HTML to
+# represent the recipe
+#
+# @param recipe A reference to a recipe hash
+# @return A string representing the recipe
+sub _build_recipe {
+    my $self   = shift;
+    my $recipe = shift;
+
+    my $temp = "";
+
+    # If a temperature has been specified, it needs including in the output
+    if($recipe -> {"temp"} && $recipe -> {"temptype"} ne "N/A") {
+        $temp = $self -> {"template"} -> load_template("search/temp.tem",
+                                                       { "%(temp)s" => $recipe -> {"temp"},
+                                                         "%(temptype)s" => $recipe -> {"temptype"}
+                                                       });
+    }
+
+    # Access to recipe controls is managed by metadata contexts
+    my $controls = "";
+    if($self -> check_permission("recipe.edit", $recipe -> {"metadata_id"})) {
+        $controls .= $self -> {"template"} -> load_template("search/controls.tem",
+                                                            { "%(url-edit)s"   => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
+                                                              "%(url-clone)s"  => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
+                                                              "%(url-delete)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
+                                                            });
+    }
+
+    my $time = ($recipe -> {"preptime"} + $recipe -> {"cooktime"}) * 60;
+
+    return $self -> {"template"} -> load_template("search/recipe.tem",
+                                                  { "%(id)s"       => $recipe -> {"id"},
+                                                    "%(url-view)s" => $self -> build_url(block    => "view",
+                                                                                         pathinfo => [ $recipe -> {"id"} ]),
+                                                    "%(name)s"     => $recipe -> {"name"},
+                                                    "%(type)s"     => $recipe -> {"type"},
+                                                    "%(status)s"   => $recipe -> {"status"},
+                                                    "%(time)s"     => $self -> {"template"} -> humanise_seconds($time, 1),
+                                                    "%(temp)s"     => $temp,
+                                                    "%(tags)s"     => join("", map { $self -> _build_tag($_) } @{$recipe -> {"tags"}}),
+                                                    "%(controls)s" => $controls,
+                                                  });
+}
+
+
+
+sub _build_search_results {
+    my $self     = shift;
+    my $term     = shift;
+    my $origonly = shift // 1;
+
+    $term =~ s/\s*/%/g;
+
+    my $recipes = $self -> {"system"} -> {"recipe"} -> find(name        => $term,
+                                                            method      => $term,
+                                                            ingredients => [ '%'.$term.'%' ],
+                                                            ingredmatch => 'any',
+                                                            tags        => [ '%'.$term.'%' ],
+                                                            tagmatch    => 'any',
+                                                            limit       => 50,
+                                                            searchmode  => 'any',
+                                                            original    => $origonly);
+
+    # And build the template fragments from that list
+    return ($self -> {"template"} -> replace_langvar("SEARCH_TITLE", { "%(page)s" => "ALL" }),
+            $self -> {"template"} -> load_template("search/content.tem",
+                                                   { "%(page)s"     => "ALL",
+                                                     "%(recipes)s"  => join("", map { $self -> _build_recipe($_) } @{$recipes}),
+                                                   }),
+            $self -> {"template"} -> load_template("search/extrahead.tem"),
+            $self -> {"template"} -> load_template("search/extrajs.tem")
+        );
+
+}
 
 
 sub _generate_search {
@@ -82,7 +174,7 @@ sub _dispatch_ui {
                                       content   => $body,
                                       extrahead => $extrahead,
                                       extrajs   => $extrajs,
-                                      active    => '',
+                                      active    => 'ALL',
                                       doclink   => 'search');
 }
 
