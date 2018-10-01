@@ -148,7 +148,37 @@ sub _build_tags_response {
         $self -> log("api:tags", "Fetching tags - term = ".($term // "not set"));
 
         return { results => $self -> {"system"} -> {"entities"} -> {"tags"} -> find(term => $term,
+                                                                                    id   => "name",
                                                                                     as   => "text") };
+    }
+
+    return $self -> api_errorhash("bad_request", $self -> {"template"} -> replace_langvar("API_BAD_REQUEST"));
+}
+
+
+## @method private $ _build_recipes_response()
+# Fetch the list of recipes in the system, filtered by name.
+#
+# @api GET /recipes
+#
+# @return A reference to a hash containing the API response data.
+sub _build_recipes_response {
+    my $self = shift;
+
+    if($self -> {"cgi"} -> request_method() eq "GET") {
+        my ($name, $error) = $self -> validate_string("name", { required => 1,
+                                                                default  => undef,
+                                                                nicename => "name" });
+        $self -> api_errorhash("bad_request",
+                               $self -> {"template"} -> replace_langvar("API_BAD_REQUEST_DATA",
+                                                                        {
+                                                                            "%(reason)s" => $error
+                                                                        }))
+            if($error);
+
+        $self -> log("api:recipes", "Fetching recipe - name = ".($name // "not set"));
+
+        return { results => $self -> {"system"} -> {"recipe"} -> find(name => $name) };
     }
 
     return $self -> api_errorhash("bad_request", $self -> {"template"} -> replace_langvar("API_BAD_REQUEST"));
