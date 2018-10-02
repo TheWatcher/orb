@@ -53,6 +53,8 @@ sub _build_recipe {
     my $self   = shift;
     my $recipe = shift;
 
+    $self -> {"system"} -> {"recipe"} -> load_recipe_relations($recipe);
+
     my $temp = "";
 
     # If a temperature has been specified, it needs including in the output
