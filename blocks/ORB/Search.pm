@@ -23,6 +23,8 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use v5.14;
+
+
 ## @method private % _build_tag($tag)
 # Given a reference to a hash containing tag data, generate HTML to
 # represent the tag
@@ -94,8 +96,6 @@ sub _build_search_results {
     my $self     = shift;
     my $term     = shift;
     my $origonly = shift // 1;
-
-    $term =~ s/\s*/%/g;
 
     my $recipes = $self -> {"system"} -> {"recipe"} -> find(name        => $term,
                                                             method      => $term,
