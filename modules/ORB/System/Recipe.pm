@@ -1022,8 +1022,15 @@ sub _join_fragment {
 }
 
 
-## @method pricate $ _where_fragment($frag, $value, $wild, $params)
+## @method private $ _where_fragment($frag, $value, $wild, $params)
 # Prepare values for inclusion in the WHERE section of the query
+#
+# @param frag   The where fragment to generate.
+# @param value  The value to search for.
+# @param wild   If true, the value is surrounded by '%', and any '*'
+#               in the value will be converted to '%'
+# @param params A reference to an array of params to pass to execute()
+# @return The where fragment to use.
 sub _where_fragment {
     my $self   = shift;
     my $frag   = shift;
@@ -1045,7 +1052,28 @@ sub _where_fragment {
 }
 
 
+## @method private $ _where_fragment($frag, $values, $params)
+# Prepare multiple values for inclusion in the WHERE section of the query.
+# This should be used for "$field IN (...)" fragments where multiple values
+# should be searched on.
+#
+# @param frag   The where fragment to generate.
+# @param values A reference to an array of values to search for.
+# @param params A reference to an array of params to pass to execute()
+# @return The where fragment to use.
 sub _multi_where_fragment {
-    my $self = shift;
+    my $self    = shift;
+    my $frag    = shift;
+    my $values  = shift;
+    my $params  = shift;
+
+    my @place = ();
+    foreach my $value (@{$values}) {
+        push(@{$params}, $value);
+        push(@place, "?");
+    }
+
+    return $frag." (".join(",", @place).") ";
 }
+
 1;
