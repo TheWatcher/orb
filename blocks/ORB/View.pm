@@ -159,7 +159,7 @@ sub _generate_view {
     my $cooktime  = $recipe -> {"cooktime"} ? $self -> {"template"} -> humanise_seconds($recipe -> {"cooktime"} * 60)
                                             : "{L_VIEW_NOTSET}";
 
-    my $totaltime = $recipe -> {"preptime"} + $recipe -> {"cooktime"};
+    my $totaltime = ($recipe -> {"preptime"} // 0) + ($recipe -> {"cooktime"} // 0);
     my $timereq   = $totaltime ? $self -> {"template"} -> humanise_seconds($totaltime * 60)
                                : "{L_VIEW_NOTSET}";
 

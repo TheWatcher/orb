@@ -73,7 +73,8 @@ sub _build_recipe {
                                                             });
     }
 
-    my $time = ($recipe -> {"preptime"} + $recipe -> {"cooktime"}) * 60;
+    my $time = (($recipe -> {"preptime"} // 0) +
+                ($recipe -> {"cooktime"} // 0) ) * 60;
 
     return $self -> {"template"} -> load_template("list/recipe.tem",
                                                   { "%(id)s"       => $recipe -> {"id"},
