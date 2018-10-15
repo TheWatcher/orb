@@ -75,6 +75,7 @@ sub _build_recipe {
                                                             });
     }
 
+    # Summarise the time
     my $time = (($recipe -> {"preptime"} // 0) +
                 ($recipe -> {"cooktime"} // 0) ) * 60;
 
@@ -109,11 +110,15 @@ sub _build_search_results {
                                                             searchmode  => 'any',
                                                             original    => $origonly);
 
-    # And build the template fragments from that list
+    my $list = join("", map { $self -> _build_recipe($_) } @{$recipes});
+    $list = $self -> {"template"} -> load_template("search/empty.tem")
+        unless($list);
+
     return ($self -> {"template"} -> replace_langvar("SEARCH_TITLE", { "%(page)s" => "ALL" }),
             $self -> {"template"} -> load_template("search/content.tem",
                                                    { "%(page)s"     => "ALL",
-                                                     "%(recipes)s"  => join("", map { $self -> _build_recipe($_) } @{$recipes}),
+                                                     "%(term)s"     => $term,
+                                                     "%(recipes)s"  => $list,
                                                    }),
             $self -> {"template"} -> load_template("search/extrahead.tem"),
             $self -> {"template"} -> load_template("search/extrajs.tem")
