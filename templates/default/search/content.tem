@@ -1,4 +1,5 @@
                         <div id="recipelist" class="cell">
+                            <h4>{L_SEARCH_RESULTS} '%(term)s'</h4>
                             <div class="column row clearfix">
                                 <div class="small input-group nomargin">
                                     <input type="search" class="input-group-field" id="listfilter" placeholder="{L_LIST_FILTER}" />
