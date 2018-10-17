@@ -23,6 +23,7 @@ use strict;
 use parent qw(ORB); # This class extends the ORB block class
 use experimental qw(smartmatch);
 use Regexp::Common qw(URI);
+use DateTime;
 use v5.14;
 
 ## @method private $ _resolve_recipe_name($rid)
@@ -101,6 +102,49 @@ sub _generate_tags {
 }
 
 
+## @method private $ _generate_history($recipeid, $originalid)
+# Generate the history list for the recipe. If there is only one
+# version of the recipe (the current version), this returns an
+# empty string.
+#
+# @param recipeid   The ID of the current recipe.
+# @param originalid The original ID of the recipe, undef for
+#                   recipes with no history.
+# @return A string containing the history html.
+sub _generate_history {
+    my $self       = shift;
+    my $recipeid   = shift;
+    my $originalid = shift;
+
+    my $histdata = $self -> {"system"} -> {"recipe"} -> get_history($recipeid, $originalid // $recipeid);
+
+    my @rows = ();
+    foreach my $row (@{$histdata}) {
+        my $url = $self -> build_url(block    => "view",
+                                     pathinfo => [ $row -> {"id"} ]);
+
+        my $date = DateTime -> from_epoch(epoch => $row -> {"created"},
+                                          time_zone => $self -> {"settings"} -> {"config"} -> {"time_zone"} // "Europe/London" );
+
+        my $template = ($row -> {"id"} == $recipeid) ? "view/history-nolink.tem" : "view/history-item.tem";
+
+        push(@rows, $self -> {"template"} -> load_template($template,
+                                                           {
+                                                               "%(view-url)s" => $url,
+                                                               "%(name)s"     => $row -> {"name"},
+                                                               "%(created)s"  => $date -> strftime($self -> {"timefmt"})
+                                                           }));
+    }
+    return ""
+        unless(scalar(@rows) > 1);
+
+    return $self -> {"template"} -> load_template("view/history.tem",
+                                                  {
+                                                      "%(recipes)s" => join("", @rows)
+                                                  });
+}
+
+
 ## @method private $ _convert_source($source)
 # Replace all URLs in the specified source string with clickable links.
 #
@@ -134,6 +178,9 @@ sub _generate_view {
 
     # Try to fetch the data.
     my $recipe = $self -> {"system"} -> {"recipe"} -> get_recipe($rid);
+
+    # And some past, if it's there
+    my $history = $self -> _generate_history($recipe -> {"id"}, $recipe -> {"original_id"});
 
     # Stop here if there's no recipe data available...
     return $self -> _fatal_error("{L_VIEW_ERROR_NORECIPE}")
@@ -185,6 +232,7 @@ sub _generate_view {
                                                            "%(ingredients)s" => $ingreds,
                                                            "%(method)s"      => $recipe -> {"method"},
                                                            "%(notes)s"       => $recipe -> {"notes"},
+                                                           "%(history)s"     => $history,
                                                            "%(controls)s"    => $controls
                                                        });
 

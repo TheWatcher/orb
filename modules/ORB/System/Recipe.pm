@@ -221,6 +221,9 @@ sub edit {
 
     $self -> {"logger"} -> log("recipe.edit", $args -> {"creator_id"}, "unknown", "Renumbered ".$args -> {"id"}." as $renumbered");
 
+    # Clear the original ID for the master.
+    $args -> {"origid"} = undef;
+
     # Create the new recipe at the old ID
     $self -> create($args)
         or return undef;
@@ -415,6 +418,30 @@ sub get_recipe {
 
     # Should be everything specifically recipe related now...
     return $self -> load_recipe_relations($recipe)
+}
+
+
+## @method $ get_history($recipeid, $originalid)
+# Fetch the history for the specified recipe.
+#
+# @param recipeid   The ID of the recipe
+# @param originalid The ID of the original recipe
+# @return A reference to an array of recipe hashes.
+sub get_history {
+    my $self       = shift;
+    my $recipeid   = shift;
+    my $originalid = shift;
+
+    my $recipes = $self -> {"dbh"} -> prepare("SELECT `id`, `name`, `created`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."` AS `r`
+                                               WHERE `id` = ?
+                                               OR `id` = ?
+                                               OR `original_id` = ?
+                                               ORDER BY `created` DESC");
+    $recipes -> execute($recipeid, $originalid, $originalid)
+        or return $self -> self_error("Unable to perform recipe history lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $recipes -> fetchall_arrayref({});
 }
 
 

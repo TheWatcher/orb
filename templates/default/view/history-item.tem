@@ -1,0 +1,1 @@
+<li><a href="%(view-url)s" target="_blank">%(name)s</a> (%(created)s)</li>

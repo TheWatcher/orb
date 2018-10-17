@@ -1,0 +1,6 @@
+     <div class="history">
+         <h4>{L_VIEW_HISTORY}</h4>
+         <ul>
+%(recipes)s
+         </ul>
+     </div>

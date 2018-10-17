@@ -14,6 +14,8 @@ VIEW_TAGS           = Tags
 VIEW_INGREDIENTS    = Ingredients
 VIEW_METHOD         = Method
 VIEW_NOTES          = Notes
+VIEW_HISTORY        = History
+VIEW_THISVERSION    = This version
 
 VIEW_EDIT           = Edit
 VIEW_CLONE          = Clone

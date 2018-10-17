@@ -56,5 +56,6 @@
          <h4>{L_VIEW_NOTES}</h4>
          <div class="notetext">%(notes)s</div>
      </div>
+%(history)s
 %(controls)s
 </div>

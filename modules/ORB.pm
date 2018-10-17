@@ -54,7 +54,8 @@ sub DateTime::TO_JSON {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(entitymap => { '&ndash;'  => '-',
+    my $self     = $class -> SUPER::new(timefmt   => '%a, %d %b %Y %H:%M',
+                                        entitymap => { '&ndash;'  => '-',
                                                        '&mdash;'  => '-',
                                                        '&rsquo;'  => "'",
                                                        '&lsquo;'  => "'",
