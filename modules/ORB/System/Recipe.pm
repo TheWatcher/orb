@@ -135,14 +135,15 @@ sub create {
         unless($args -> {"created"});
 
     # We need a metadata context for the recipe
-    my $metadataid = $self -> _create_recipe_metadata($args -> {"origid"});
+    $args -> {"metadataid"} = $self -> _create_recipe_metadata()
+        unless($args -> {"metadataid"});
 
     # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                             (`id`, `metadata_id`, `original_id`, `name`, `source`, `prepinfo`, `preptime`, `cooktime`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`)
                                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
     my $result = $newh -> execute($args -> {"id"},
-                                  $metadataid,
+                                  $args -> {"metadataid"},
                                   $args -> {"origid"},
                                   $args -> {"name"},
                                   $args -> {"source"},
@@ -173,7 +174,7 @@ sub create {
         if(!$newid);
 
     # Attach to the metadata context as it's in use now
-    $self -> {"metadata"} -> attach($metadataid)
+    $self -> {"metadata"} -> attach($args -> {"metadataid"})
         or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
 
     # Add the ingredients for the recipe
@@ -211,8 +212,14 @@ sub edit {
     # We want the new recipe to get the same ID as the old one, so record it
     $args -> {"id"} = $args -> {"origid"};
 
+    # And get the source metadata context
+    $args -> {"metadataid"} = $self -> get_recipe_metadata($args -> {"id"});
+
     # Now move the old recipe out of the way so the new one can use its ID
-    my $renumbered = $self -> _renumber_recipe($args -> {"id"});
+    my $renumbered = $self -> _renumber_recipe($args -> {"id"}, $args -> {"metadataid"})
+        or return undef;
+
+    $self -> {"logger"} -> log("recipe.edit", $args -> {"creator_id"}, "unknown", "Renumbered ".$args -> {"id"}." as $renumbered");
 
     # Create the new recipe at the old ID
     $self -> create($args)
@@ -223,8 +230,6 @@ sub edit {
                         $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
                         $args -> {"updaterid"})
         or return undef;
-
-
 
     return $args -> {"id"};
 }
@@ -802,7 +807,7 @@ sub _get_tags {
 }
 
 
-## @method private $ _renumber_recipe($sourceid)
+## @method private $ _renumber_recipe($sourceid, $contextid)
 # Given a recipe ID, move the recipe to a new ID at the end of the recipe
 # table. This will move the recipe and all relations involving it, to
 # a new ID at the end of the table, leaving the source ID available for
@@ -810,11 +815,13 @@ sub _get_tags {
 # an autoincrement, reusing the ID will require explicit specification
 # of the ID in the insert.
 #
-# @param sourceid The ID of the recipe to move.
+# @param sourceid  The ID of the recipe to move.
+# @param contextid The metadata context ID of the source recipe.
 # @return The new ID of the recipe on success, undef on error.
 sub _renumber_recipe {
-    my $self     = shift;
-    my $sourceid = shift;
+    my $self      = shift;
+    my $sourceid  = shift;
+    my $contextid = shift;
 
     $self -> clear_error();
 
@@ -833,7 +840,7 @@ sub _renumber_recipe {
         or return $self -> self_error("Unable to obtain id for new recipe");
 
     # Move all the old ingredient and tage relations to the copy we've just made
-    $self -> _fix_recipe_relations($sourceid, $newid)
+    $self -> _fix_recipe_relations($sourceid, $newid, $contextid)
         or return undef;
 
     # Nuke the old recipe
@@ -848,18 +855,20 @@ sub _renumber_recipe {
 }
 
 
-## @method private $ _fix_recipe_relations($sourceid, $destid)
+## @method private $ _fix_recipe_relations($sourceid, $destid, $contextid)
 # Correct all relations to the source recipe so that they refer to the
 # destination. This is used as part of the renumbering process to
 # fix up any relations that use the old recipe Id to use the new one.
 #
-# @param sourceid The ID of the old recipe.
-# @param destid   The ID of the new recipe.
+# @param sourceid  The ID of the old recipe.
+# @param destid    The ID of the new recipe.
+# @param contextid The metadata context ID of the source recipe.
 # @return true on success, undef on error.
 sub _fix_recipe_relations {
-    my $self     = shift;
-    my $sourceid = shift;
-    my $destid   = shift;
+    my $self      = shift;
+    my $sourceid  = shift;
+    my $destid    = shift;
+    my $contextid = shift;
 
     $self -> clear_error();
 
@@ -877,11 +886,13 @@ sub _fix_recipe_relations {
     $moveh -> execute($destid, $sourceid)
         or return $self -> self_error("Ingredient relation fixup failed: ".$self -> {"dbh"} -> errstr());
 
+    my $metadataid = $self -> _create_recipe_metadata($contextid);
+
     # And set the original ID in the renumbered recipe
     my $origh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                             SET `original_id` = ?
+                                             SET `original_id` = ?, `metadata_id` = ?
                                              WHERE `id` = ?");
-    $origh -> execute($sourceid, $destid)
+    $origh -> execute($sourceid, $metadataid, $destid)
         or return $self -> self_error("Ingredient origin fixup failed: ".$self -> {"dbh"} -> errstr());
 
     return 1;
@@ -921,7 +932,7 @@ sub get_recipe_metadata {
 # as a child of the metadata context for the specific previous recipe, if one
 # is provided, to allow cascading permissions.
 #
-# @param previd Optional ID of the previous recipe. This should be set when
+# @param previd Optional metadata ID of the previous recipe. This should be set when
 #               editing a recipe; for new recipes, leave this as undef or 0.
 # @return The ID of a new metadata context to attach the recipe to on success,
 #         undef on error.
@@ -929,12 +940,8 @@ sub _create_recipe_metadata {
     my $self   = shift;
     my $previd = shift;
 
-    if($previd) {
-        my $parentid = $self -> get_recipe_metadata($previd)
-            or return undef;
-
-        return $self -> {"metadata"} -> create($parentid);
-    }
+    return $self -> {"metadata"} -> create($previd)
+        if($previd);
 
     return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Recipe:base_metadata"} // 1);
 }

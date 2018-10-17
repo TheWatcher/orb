@@ -1,6 +1,6 @@
 %(errors)s
 <div class="small-8 small-offset-2 cell">
-    <form class="nomargin" method="POST" id="newrecipe">
+    <form class="nomargin" method="POST" id="recipeform">
         <h4 class="underscore">{L_NEW_TITLE}</h4>
         <div>
             <label>{L_RECIPE_NAME}

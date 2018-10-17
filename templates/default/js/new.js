@@ -140,5 +140,5 @@ $(function() {
     });
 
     // Build the ingredient list before submitting
-    $('#newrecipe').on('submit', function() { build_ingdata(); return true });
+    $('#recipeform').on('submit', function() { build_ingdata(); return true });
 });
