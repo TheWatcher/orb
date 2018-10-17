@@ -165,8 +165,8 @@ sub _build_ingredients {
             # Which template to use depends on whether this is a separator
             my $template = $ingred -> {"separator"} ? "new/separator.tem" : "new/ingredient.tem";
 
-            my $unitopts = $self -> {"template"} -> build_optionlist($units, $args -> {"units"});
-            my $prepopts = $self -> {"template"} -> build_optionlist($preps, $args -> {"prep"});
+            my $unitopts = $self -> {"template"} -> build_optionlist($units, $ingred -> {"units"});
+            my $prepopts = $self -> {"template"} -> build_optionlist($preps, $ingred -> {"prep"});
 
             push(@ingreds,
                  $self -> {"template"} -> load_template($template,
@@ -343,7 +343,6 @@ sub _validate_ingredients {
                                                              });
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
-    print STDERR "JSON:".$args -> {"ingdata"}."\n";
 
     my $ingdata = eval { decode_json($args -> {"ingdata"}) };
     return $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => "{L_ERR_JSONFORMAT}: $@" })
@@ -356,7 +355,6 @@ sub _validate_ingredients {
             $errors .= $self -> _validate_ingredient($args, $ingred);
         }
     }
-    print STDERR "Out: ",Dumper($args -> {"ingredients"})."\n";
 
     return $errors;
 }
