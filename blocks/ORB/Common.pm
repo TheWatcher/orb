@@ -28,7 +28,6 @@ use JSON;
 # How many ingredient rows should appear in the empty form?
 use constant DEFAULT_INGREDIENT_COUNT => 5;
 
-use Data::Dumper;
 
 # ============================================================================
 #  Page generation support functions

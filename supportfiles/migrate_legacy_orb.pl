@@ -9,7 +9,7 @@ use DBI;
 use Webperl::Logger;
 use Webperl::ConfigMicro;
 use ORB::System;
-use Data::Dumper;
+
 
 ## @fn void clear_target_tables($dbh, $settings)
 # Empty out tables in the new ORB database to allow easier reimport.
