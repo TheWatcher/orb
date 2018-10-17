@@ -2,6 +2,10 @@ NEW_TITLE        = Create Recipe
 NEW_CREATE       = Add Recipe
 NEW_ERRORS       = Unable to create recipe; the following errors have been encountered:
 
+EDIT_TITLE       = Edit Recipe
+EDIT_EDIT        = Edit Recipe
+EDIT_ERRORS      = Unable to edit recipe; the following errors have been encountered:
+
 RECIPE_NAME         = Name
 RECIPE_NAME_DOC     = The name of the recipe
 RECIPE_NAME_PH      = Recipe name
@@ -58,3 +62,6 @@ ERR_BADSEPNAME   = Unsupported characters in separator name: only alphanumerics,
 ERR_BADQUANTITY  = No quantity specified for ingredient.
 ERR_BADNOTES     = Unsupported characters in notes: only alphanumerics, (, ), _, -, comma, space, and period are supported.
 ERR_JSONFORMAT   = Unknown or corrupt data in ingredient JSON
+
+EDIT_FAILED_BADID    = Unable to edit recipe: the specified recipe identifier is invalid.
+EDIT_FAILED_NOTFOUND = Unable to locate a recipe with the specified identifier.

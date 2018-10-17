@@ -1,0 +1,8 @@
+        </script>
+        <script src="{V_[templatepath]}3rdparty/timepicker/jquery-time-duration-picker.js"></script>
+        <script src="{V_[templatepath]}3rdparty/ckeditor/ckeditor.js"></script>
+        <script src="{V_[jspath]}new.js"></script>
+        <script>
+            api = { ingredients: '{V_[scriptpath]}rest/api/ingredients',
+                           tags: '{V_[scriptpath]}rest/api/tags',
+                  };
