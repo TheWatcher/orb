@@ -30,7 +30,7 @@ use JSON;
 #  UI handler/dispatcher functions
 
 ## @method $ _generate_new()
-# Build the page containing the user creation form.
+# Build the page containing the recipe creation form.
 #
 # @return An array containing the page title, content, extra header data, and
 #         extra javascript content.
