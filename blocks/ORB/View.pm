@@ -36,7 +36,7 @@ sub _resolve_recipe_name {
 
     return $rid if($rid =~ /^\d+$/);
 
-
+    # TODO: actually search (use a slug search?)
 }
 
 
@@ -58,7 +58,7 @@ sub _generate_ingredients {
                                                                      "%(separator)s" => $ingred -> {"separator"}
                                                                  }));
         } else {
-            my $units = $ingred -> {"units"} eq "None" ? "" : $ingred -> {"units"};
+            my $units = (($ingred -> {"units"} // "None") eq "None") ? "" : $ingred -> {"units"};
             my $quantity = $ingred -> {"quantity"} ? $ingred -> {"quantity"} : "";
 
             push(@result, $self -> {"template"} -> load_template("view/ingredient.tem",
