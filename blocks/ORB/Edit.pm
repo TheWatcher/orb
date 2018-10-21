@@ -239,7 +239,7 @@ sub _dispatch_ui {
                                       extrahead => $extrahead,
                                       extrajs   => $extrajs,
                                       active    => '-',
-                                      doclink   => 'summary');
+                                      doclink   => 'edit');
 }
 
 

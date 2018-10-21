@@ -283,7 +283,7 @@ sub _dispatch_ui {
                                       extrahead => $extrahead,
                                       extrajs   => $extrajs,
                                       active    => substr($title, 0, 1),
-                                      doclink   => 'summary');
+                                      doclink   => 'view');
 }
 
 
