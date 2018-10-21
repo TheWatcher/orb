@@ -177,6 +177,13 @@ sub create {
     $self -> {"metadata"} -> attach($args -> {"metadataid"})
         or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
 
+    # Add the user as an editor
+    my $roleid = $self -> {"system"} -> {"roles"} -> role_get_roleid("editor");
+    $self -> {"system"} -> {"roles"} -> user_assign_role($args -> {"metadataid"},
+                                                         $args -> {"creatorid"},
+                                                         $roleid)
+        or return $auth -> self_error($self -> {"system"} -> {"roles"} -> {"errstr"})
+
     # Add the ingredients for the recipe
     $self -> _add_ingredients($newid, $args -> {"ingredients"})
         or return undef;
