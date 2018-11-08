@@ -182,7 +182,7 @@ sub create {
     $self -> {"system"} -> {"roles"} -> user_assign_role($args -> {"metadataid"},
                                                          $args -> {"creatorid"},
                                                          $roleid)
-        or return $auth -> self_error($self -> {"system"} -> {"roles"} -> {"errstr"})
+        or return $self -> self_error($self -> {"system"} -> {"roles"} -> {"errstr"});
 
     # Add the ingredients for the recipe
     $self -> _add_ingredients($newid, $args -> {"ingredients"})
