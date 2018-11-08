@@ -70,7 +70,7 @@ sub new {
     return SystemModule::set_error("No entity table specified when attempting to create object")
         if(!$self -> {"entity_table"});
 
-    return $self
+    return $self;
 }
 
 
@@ -99,12 +99,7 @@ sub create {
     return $self -> self_error("Unable to perform ".$self -> {"entity_table"}." insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error($self -> {"entity_table"}." insert failed, no rows inserted") if($rows eq "0E0");
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
-    #        Try to find a decent solution for this mess...
-    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
-    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
-    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
-    #       There, why couldn't they bloody /say/ that?!
+    # Get the row ID
     my $id = $self -> {"dbh"} -> {"mysql_insertid"};
     return $self -> self_error("Unable to obtain id for entity '$name'") if(!$id);
 
