@@ -20,6 +20,14 @@ VIEW_THISVERSION    = This version
 VIEW_EDIT           = Edit
 VIEW_CLONE          = Clone
 VIEW_DELETE         = Delete
+VIEW_STAGE          = Add to menu
+
+VIEW_NEWMENU_NEW    = New Menu
+VIEW_NEWMENU_INTRO  = Create a new menu, and make it your active menu here
+VIEW_NEWMENU_NAME   = Menu name
+VIEW_NEWMENU_CREATE = Create
+VIEW_NEWMENU_CANCEL = Cancel
+
 
 VIEW_ERROR_FATAL    = View error
 VIEW_ERROR_NORECIPE = No matching recipe found
