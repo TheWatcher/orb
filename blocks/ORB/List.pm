@@ -67,9 +67,9 @@ sub _build_recipe {
     my $controls = "";
     if($self -> check_permission("recipe.edit", $recipe -> {"metadata_id"})) {
         $controls .= $self -> {"template"} -> load_template("list/controls.tem",
-                                                            { "%(url-edit)s"   => $self -> build_url(block => "edit", pathinfo => [ $recipe -> {"id"}  ]),
-                                                              "%(url-clone)s"  => $self -> build_url(block => "edit", pathinfo => [ "clone", $recipe -> {"id"} ]),
-                                                              "%(url-delete)s" => $self -> build_url(block => "edit", pathinfo => [ "delete", $recipe -> {"id"}]),
+                                                            { "%(url-edit)s"   => $self -> build_url(block => "edit"  , pathinfo => [ $recipe -> {"id"}]),
+                                                              "%(url-clone)s"  => $self -> build_url(block => "clone" , pathinfo => [ $recipe -> {"id"}]),
+                                                              "%(url-delete)s" => $self -> build_url(block => "delete", pathinfo => [ $recipe -> {"id"}]),
                                                             });
     }
 
