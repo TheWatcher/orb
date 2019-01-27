@@ -92,7 +92,7 @@ sub _generate_edit {
     $args -> {"tags"} = $self -> _convert_tags($args -> {"tags"});
     $self -> _convert_ingredients($args);
 
-    # User must have recipe create to proceed.
+    # User must have recipe edit to proceed.
     return $self -> _fatal_error("{L_PERMISSION_FAILED_SUMMARY}")
         unless($self -> check_permission('recipe.edit', $args -> {"metadata_id"}));
 
@@ -112,7 +112,7 @@ sub _generate_edit {
                 or $errors = $self -> {"template"} -> load_template("error/error_item.tem",
                                                                     { "%(error)s" => $self -> {"system"} -> {"recipe"} -> errstr() });
 
-            # Did the addition work? If so, send the user to the view page for the new recipe
+            # Did the edit work? If so, send the user to the view page for the new recipe
             return $self -> redirect($self -> build_url(block    => "view",
                                                         pathinfo => [ $args -> {"id"} ],
                                                         params   => "",

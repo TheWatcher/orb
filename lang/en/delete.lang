@@ -1,0 +1,5 @@
+DELETE_FAILED_BADID    = Unable to delete recipe: the specified recipe identifier is invalid.
+DELETE_FAILED_NOTFOUND = Unable to locate a recipe with the specified identifier.
+
+DELETE_ERROR_FATAL     = Deletion error
+DELETE_FAILED          = Unable to delete recipe

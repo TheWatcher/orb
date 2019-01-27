@@ -80,7 +80,8 @@ sub init {
                                                      settings => $self -> {"settings"},
                                                      logger   => $self -> {"logger"},
                                                      metadata => $self -> {"metadata"},
-                                                     entities => $self -> {"entities"})
+                                                     entities => $self -> {"entities"},
+                                                     roles    => $self -> {"roles"})
         or return $self -> self_error("Recipe model init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;

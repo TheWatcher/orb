@@ -29,7 +29,7 @@ use v5.14;
 
 use experimental qw(smartmatch);
 use Webperl::Utils qw(hash_or_hashref array_or_arrayref);
-
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor and cleanup
@@ -140,8 +140,8 @@ sub create {
 
     # Do the insert, and fetch the ID of the new row
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                            (`id`, `metadata_id`, `original_id`, `name`, `source`, `prepinfo`, `preptime`, `cooktime`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
+                                            (`id`, `metadata_id`, `original_id`, `name`, `source`, `prepinfo`, `preptime`, `cooktime`, `yield`, `temp`, `temptype`, `method`, `notes`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`, `viewed`)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     my $result = $newh -> execute($args -> {"id"},
                                   $args -> {"metadataid"},
                                   $args -> {"origid"},
@@ -160,7 +160,8 @@ sub create {
                                   $args -> {"creatorid"},
                                   $args -> {"created"},
                                   $args -> {"creatorid"},
-                                  $args -> {"created"});
+                                  $args -> {"created"},
+                                  0);
     return $self -> self_error("Insert of recipe failed: ".$self -> {"dbh"} -> errstr)
         if(!$result);
 
@@ -178,11 +179,11 @@ sub create {
         or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
 
     # Add the user as an editor
-    my $roleid = $self -> {"system"} -> {"roles"} -> role_get_roleid("editor");
-    $self -> {"system"} -> {"roles"} -> user_assign_role($args -> {"metadataid"},
-                                                         $args -> {"creatorid"},
-                                                         $roleid)
-        or return $self -> self_error($self -> {"system"} -> {"roles"} -> {"errstr"});
+    my $roleid = $self -> {"roles"} -> role_get_roleid("editor");
+    $self -> {"roles"} -> user_assign_role($args -> {"metadataid"},
+                                           $args -> {"creatorid"},
+                                           $roleid)
+        or return $self -> self_error($self -> {"roles"} -> {"errstr"});
 
     # Add the ingredients for the recipe
     $self -> _add_ingredients($newid, $args -> {"ingredients"})
@@ -861,8 +862,8 @@ sub _renumber_recipe {
 
     # Duplicate the source recipe at the end of the table
     my $moveh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
-                                            (`metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`)
-                                                SELECT `metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `viewed`
+                                            (`metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`, `viewed`)
+                                                SELECT `metadata_id`, `name`, `method`, `notes`, `source`, `yield`, `prepinfo`, `preptime`, `cooktime`, `temptype`, `temp`, `type_id`, `status_id`, `creator_id`, `created`, `updater_id`, `updated`, `viewed`
                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"recipes"}."`
                                                 WHERE `id` = ?");
     my $rows = $moveh -> execute($sourceid);
