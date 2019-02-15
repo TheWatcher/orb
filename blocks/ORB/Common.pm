@@ -297,7 +297,7 @@ sub _validate_ingredient {
     # Notes get copied, as long as they don't contain junk
     if($ingdata -> {"notes"}) {
         if($ingdata -> {"notes"} =~ /$self->{formats}->{notes}/) {
-            $ingredient -> {"notes"} = $ingdata -> {"notes"};
+            $ingredient -> {"notes"} = $self -> {"template"} -> html_clean($ingdata -> {"notes"});
         } else {
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem",
                                                               { "%(error)s" => "{L_ERR_BADNOTES}" });
