@@ -1,4 +1,4 @@
-     <div class="history">
+     <div class="history hide-for-print">
          <h4>{L_VIEW_HISTORY}</h4>
          <ul>
 %(recipes)s
