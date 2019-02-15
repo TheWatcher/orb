@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>%(title)s</title>
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.css" />
-        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/foundation/css/foundation.min.css" />
+        <link rel="stylesheet" href="{V_[templatepath]}3rdparty/foundation/css/foundation.css" />
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/fontawesome/css/all.css" />
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/select2/css/select2.min.css" />
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/select2-foundation/select2-foundation-theme.min.css" />
