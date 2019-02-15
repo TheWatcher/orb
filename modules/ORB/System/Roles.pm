@@ -310,7 +310,7 @@ sub user_assign_role {
     # update its touched timestamp
     } else {
         my $oldh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}."
-                                                SET touched = UNIX_TIMESTAMP(),
+                                                SET touched = UNIX_TIMESTAMP()
                                                 WHERE id = ?");
         $rows = $oldh -> execute($role -> {"id"});
         return $self -> self_error("Unable to perform metadata role update: ". $self -> {"dbh"} -> errstr) if(!$rows);
