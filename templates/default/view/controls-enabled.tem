@@ -2,10 +2,10 @@
     <a class="dropdown button arrow-only" data-toggle="menu-dropdown">
        <span class="show-for-sr">Show menu</span>
     </a>
-    <a href="%(url-stage)s"  class="button" title="Stage"><i class="fa fa-list" aria-hidden="true"></i> {L_VIEW_STAGE}</a>
-    <a href="%(url-edit)s"   class="button" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i> {L_VIEW_EDIT}</a>
-    <a href="%(url-clone)s"  class="button" title="Clone"><i class="fa fa-copy" aria-hidden="true"></i> {L_VIEW_CLONE}</a>
-    <a href="%(url-delete)s" class="button alert" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i> {L_VIEW_DELETE}</a>
+    <a href="%(url-stage)s"  class="button"       title="{L_VIEW_STAGE}"><i class="fa fa-list" aria-hidden="true"></i> {L_VIEW_STAGE}</a>
+    <a href="%(url-edit)s"   class="button"       title="{L_VIEW_EDIT}"><i class="fa fa-edit" aria-hidden="true"></i> {L_VIEW_EDIT}</a>
+    <a href="%(url-clone)s"  class="button"       title="{L_VIEW_CLONE}"><i class="fa fa-copy" aria-hidden="true"></i> {L_VIEW_CLONE}</a>
+    <a href="%(url-delete)s" class="button alert" title="{L_VIEW_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i> {L_VIEW_DELETE}</a>
 </div>
 <div class="dropdown-pane" id="menu-dropdown" data-dropdown data-auto-focus="true">
     <select name="setmenu" id="setmenu">
