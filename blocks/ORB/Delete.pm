@@ -17,7 +17,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 ## @class
-package ORB::Edit;
+package ORB::Delete;
 
 use strict;
 use parent qw(ORB::Common); # This class extends the ORB common class
@@ -44,9 +44,9 @@ sub _generate_delete {
     return $self -> _fatal_error("{L_PERMISSION_FAILED_SUMMARY}")
         unless($self -> check_permission('recipe.edit', $recipe -> {"metadata_id"}));
 
-    $args -> {"id"} = $self -> {"system"} -> {"recipe"} -> set_status($recipe -> {"id"},
-                                                                      $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted"
-                                                                      $self -> {"session"} -> get_session_userid())
+    my $id = $self -> {"system"} -> {"recipe"} -> set_status($recipe -> {"id"},
+                                                             $self -> {"settings"} -> {"config"} -> {"Recipe:status:deleted"} // "Deleted",
+                                                             $self -> {"session"} -> get_session_userid())
         or $errors = $self -> {"template"} -> load_template("error/error_item.tem",
                                                             { "%(error)s" => $self -> {"system"} -> {"recipe"} -> errstr() });
 
