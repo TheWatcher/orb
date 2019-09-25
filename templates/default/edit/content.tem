@@ -126,7 +126,7 @@
                 </select>
             </div>
             <div class="small-3 cell">
-                <input type="text" class="ingredient" placeholder="{L_RECIPE_ING_ING_PH}" />
+                <input type="text" class="ingredient" pattern="[-\w,.:()\x26;#*\\ ]+" title="{L_RECIPE_ING_FORMAT}" placeholder="{L_RECIPE_ING_ING_PH}" />
             </div>
             <div class="small-3 cell">
                 <input type="text" class="notes" placeholder="{L_RECIPE_ING_NOTE_PH}" />
@@ -139,7 +139,7 @@
     <li class="separator">
         <div class="grid-x">
             <div class="small-11 cell">
-                <input type="text" class="separator" placeholder="Separator text">
+                <input type="text" class="separator" pattern="[-\w,.:()\x26;#*\\ ]+" title="{L_RECIPE_ING_FORMAT}" placeholder="Separator text">
             </div>
             <div class="small-1 cell">
                 <button class="button alert deletectrl" type="button" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>

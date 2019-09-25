@@ -42,6 +42,10 @@ function add_ingredient(count)
 
 function build_ingdata()
 {
+    if(!document.forms['recipeform'].reportValidity()) {
+        return false;
+    }
+
     var values = new Array();
 
     // Go through all the children of the ingredient list
@@ -72,6 +76,8 @@ function build_ingdata()
     });
 
     $('#ingdata').val(JSON.stringify({ "ingredients": values }));
+
+    return true;
 }
 
 
@@ -140,5 +146,5 @@ $(function() {
     });
 
     // Build the ingredient list before submitting
-    $('#recipeform').on('submit', function() { build_ingdata(); return true });
+    $('#recipeform').on('submit', function() { return build_ingdata(); });
 });

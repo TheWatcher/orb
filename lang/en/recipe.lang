@@ -52,6 +52,7 @@ RECIPE_ING_ING_PH   = Ingredient
 RECIPE_ING_NOTE_PH  = Notes
 RECIPE_ING_SEP_PH   = Separator text
 RECIPE_ING_DELETE   = Delete
+RECIPE_ING_FORMAT   = Ingredient names and separators may only contain alphanumrics, -, _, comma, period, colon, semi-colon, parenthesis, ampersand, octothorpe, * and backslash
 
 RECIPE_METHOD       = Method
 RECIPE_NOTES        = Notes

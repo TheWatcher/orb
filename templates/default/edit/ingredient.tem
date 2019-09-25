@@ -14,7 +14,7 @@
                         </select>
                     </div>
                     <div class="small-3 cell">
-                        <input type="text" class="ingredient" placeholder="{L_RECIPE_ING_ING_PH}" value="%(name)s" />
+                        <input type="text" class="ingredient" pattern="[-\w,.:()\x26;#*\\ ]+" title="{L_RECIPE_ING_FORMAT}" placeholder="{L_RECIPE_ING_ING_PH}" value="%(name)s" />
                     </div>
                     <div class="small-3 cell">
                         <input type="text" class="notes" placeholder="{L_RECIPE_ING_NOTE_PH}" value="%(notes)s" />
