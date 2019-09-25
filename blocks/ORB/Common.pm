@@ -507,7 +507,7 @@ sub _validate_recipe {
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "%(error)s" => $error })
         if($error);
 
-    return ($args, undef);
+    return ($args, $errors);
 }
 
 
