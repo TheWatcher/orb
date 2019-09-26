@@ -1,7 +1,7 @@
                 <div class="top-bar hide-for-print">
                     <div class="top-bar-left">
                         <ul class="menu">
-                            <li><button id="menubtn" class="menu-icon dark" type="button" data-open="offCanvas"></button></li>
+                            <li><button id="menubtn" class="menu-icon" type="button" data-open="offCanvas"></button></li>
                             <li><form action="%(url-search)s" method="POST"><input type="search" name="search" id="search" placeholder="Search"></form></li>
                         </ul>
                     </div>

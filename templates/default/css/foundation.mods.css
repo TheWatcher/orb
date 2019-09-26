@@ -105,3 +105,35 @@ div.time-duration-picker-content td select {
 div.topspace {
     margin-top: 0.5rem;
 }
+
+.top-bar, .top-bar ul {
+    background-color: #252888;
+}
+
+.menu .button, .menu a {
+    padding: 0.5rem;
+}
+
+.menu.submenu.is-dropdown-submenu {
+    background-color: #e6e6e6;
+}
+
+.dropdown.menu>li.is-dropdown-submenu-parent>a::after {
+    content: none;
+}
+
+.dropdown.menu>li.is-dropdown-submenu-parent>a {
+    padding-right: 0px;
+}
+
+.is-submenu-item.is-dropdown-submenu-item:hover {
+        background-color: #efefef;
+}
+
+div.top-bar-right .menu>li {
+    margin-left: 0.2rem;
+}
+
+div.top-bar-right .dropdown.menu>li>.button{
+    padding: 0.5rem;
+}
