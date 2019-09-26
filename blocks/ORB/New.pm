@@ -65,7 +65,7 @@ sub _generate_new {
 
     # Wrap the errors if there are any
     if($errors) {
-        $self -> log("new", "Errors detected in addition: $errors");
+        $self -> log("recipe.new", "Errors detected in addition: $errors");
 
         my $errorlist = $self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s"  => "{L_NEW_ERRORS}",
                                                                                         "%(errors)s" => $errors });

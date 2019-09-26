@@ -97,7 +97,7 @@ sub _generate_edit {
         unless($self -> check_permission('recipe.edit', $args -> {"metadata_id"}));
 
     if($self -> {"cgi"} -> param("editrecipe")) {
-        $self -> log("recipe.edit", "User has submitted data for recipe $recipeid");
+        $self -> log("recipe.edit", "User has submitted edited for recipe $recipeid");
 
         $args = {};
 
@@ -123,7 +123,7 @@ sub _generate_edit {
 
     # Wrap the errors if there are any
     if($errors) {
-        $self -> log("new", "Errors detected in addition: $errors");
+        $self -> log("recipe.edit", "Errors detected in edit: $errors");
 
         my $errorlist = $self -> {"template"} -> load_template("error/error_list.tem", {"%(message)s"  => "{L_NEW_ERRORS}",
                                                                                         "%(errors)s" => $errors });
