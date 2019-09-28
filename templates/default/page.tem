@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="Description" content="Online Recipe Book. A recipe book, except it's online.">
         <title>%(title)s</title>
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/jquery-ui/jquery-ui.min.css" />
         <link rel="stylesheet" href="{V_[templatepath]}3rdparty/foundation/css/foundation.css" />
