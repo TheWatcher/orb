@@ -13,7 +13,7 @@ RewriteEngine On
 # RewriteBase /subdir/
 #RewriteBase /
 
-RewriteCond %{REQUEST_URI} !^/(templates|media|docs|ckeditor|images|data|index.cgi)
+RewriteCond %{REQUEST_URI} !^/(templates|media|docs|ckeditor|images|data|index.cgi|robots.txt)
 RewriteRule (.*) index.cgi/$1 [PT,L]
 
 # Compress text, html, javascript, css, xml:
