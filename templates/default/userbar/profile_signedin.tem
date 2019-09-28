@@ -1,6 +1,6 @@
                         <ul class="dropdown menu" data-dropdown-menu>
-                            <li><a href="%(url-new)s" class="button"><i class="fas fa-plus"></i></a></li>
-                            <li class="image is-dropdown-submenu-parent"><a href="#" class="nopadding"><img alt="" src="https://gravatar.com/avatar/%(gravhash)s?s=32&amp;d=mm&amp;r=g" class="avatar avatar-32" height="32" width="32" /></a>
+                            <li><a href="%(url-new)s" class="button" title="{L_NEW_CREATE}"><i class="fas fa-file"></i></a></li>
+                            <li class="image is-dropdown-submenu-parent"><a href="#" class="nopadding" title="%(realname)s"><img alt="" src="https://gravatar.com/avatar/%(gravhash)s?s=32&amp;d=mm&amp;r=g" class="avatar avatar-32" height="32" width="32" /></a>
                                 <ul class="menu">
                                     <li><a href="%(url-setpass)s">Set Password</a></li>
                                     <li><a href="%(url-signout)s">Sign out</a></li>

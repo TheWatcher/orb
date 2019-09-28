@@ -2,6 +2,7 @@
                             <div class="column row clearfix">
                                 <div class="small input-group nomargin">
                                     <input type="search" class="input-group-field" id="listfilter" placeholder="{L_LIST_FILTER}" />
+                                    <label for="listfilter" class="show-for-sr">Filter</label>
                                     <div class="input-group-button button-group">
                                         <button class="button" type="button" data-toggle="sort-dropdown">{L_LIST_SORT}</button>
                                     </div>
