@@ -229,20 +229,20 @@ sub edit {
 
     $self -> {"logger"} -> log("recipe.edit", $args -> {"creator_id"}, "unknown", "Renumbered ".$args -> {"id"}." as $renumbered");
 
-    # Clear the original ID for the master.
-    $args -> {"origid"} = undef;
-
-    # Create the new recipe at the old ID
-    $self -> create($args)
-        or return undef;
-
     # Set the status of the edited recipe
     $self -> set_status($renumbered,
                         $self -> {"settings"} -> {"config"} -> {"Recipe:status:edited"} // "Edited",
                         $args -> {"updaterid"})
         or return undef;
 
-    return $args -> {"id"};
+
+    # Clear the original ID for the master.
+    $args -> {"origid"} = undef;
+
+    $self -> {"logger"} -> log("recipe.edit", $args -> {"creator_id"}, "unknown", "Creating new version of recipe at ".$args -> {"id"});
+
+    # Create the new recipe at the old ID
+    return $self -> create($args);
 }
 
 
