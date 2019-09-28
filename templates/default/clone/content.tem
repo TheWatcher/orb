@@ -1,0 +1,149 @@
+%(errors)s
+<div class="small-8 small-offset-2 cell">
+    <form class="nomargin" method="POST" id="recipeform">
+        <h4 class="underscore">{L_EDIT_TITLE}</h4>
+        <div>
+            <label>{L_RECIPE_NAME}
+                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_NAME_DOC}" type="text" id="name" name="name" value="%(name)s" placeholder="{L_RECIPE_NAME_PH}" required />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_SOURCE}
+                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_SOURCE_DOC}" type="text" id="source" name="source" value="%(source)s" placeholder="{L_RECIPE_SOURCE_PH}" />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_YIELD}
+                <input maxlength="80"  data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_YIELD_DOC}" type="text" id="yeild" name="yield" value="%(yield)s" placeholder="{L_RECIPE_YIELD_PH}" />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_PREPINFO}
+                <input maxlength="255" data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPINFO_DOC}" type="text" id="prepinfo" name="prepinfo" value="%(prepinfo)s" placeholder="{L_RECIPE_PREPINFO_PH}" required />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_PREPTIME}
+                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_PREPTIME_DOC}" type="text" id="preptime" name="preptime" value="%(preptime)s" placeholder="{L_RECIPE_PREPTIME_PH}" autocomplete="off" />
+                <input type="hidden" name="prepsecs" id="prepsecs" value="%(prepsecs)s" />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_COOKTIME}
+                <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_COOKTIME_DOC}" type="text" id="cooktime" name="cooktime" value="%(cooktime)s" placeholder="{L_RECIPE_COOKTIME_PH}" autocomplete="off" />
+                <input type="hidden" name="cooksecs" id="cooksecs" value="%(cooksecs)s" />
+            </label>
+        </div>
+        <div>
+            <label>{L_RECIPE_OVENTEMP}
+                <div class="grid-x">
+                    <div class="small-6 cell">
+                        <input data-tooltip aria-haspopup="true" class="has-tip top" data-disable-hover="false" title="{L_RECIPE_OVENTEMP_DOC}" type="number" id="temp" name="temp" value="%(temp)s" placeholder="{L_RECIPE_OVENTEMP_PH}" />
+                    </div>
+                    <div class="small-6 cell">
+                        <select id="temptype" name="temptype">
+                            %(temptypes)s
+                        </select>
+                    </div>
+                </div>
+            </label>
+        </div>
+        <div class="grid-x">
+            <div class="medium-6 cell form-left">
+                <label>{L_RECIPE_TYPE}
+                    <select id="type" name="type">
+%(types)s
+                    </select>
+                </label>
+            </div>
+            <div class="medium-6 cell form-right">
+                <label>{L_RECIPE_STATUS}
+                    <select id="status" name="status">
+%(status)s
+                    </select>
+                </label>
+            </div>
+        </div>
+        <div class="spacer">
+            <label>{L_RECIPE_TAGS}
+                <select id="tags" name="tags" size="1" multiple="multiple">
+%(tags)s
+                </select>
+            </label>
+        </div>
+        <ul id="ingredients">
+%(ingreds)s
+        </ul>
+        <input type="hidden" id="ingdata" name="ingdata" />
+        <div class="button-group">
+            <button type="button" class="button" id="addsep" >{L_RECIPE_ADD_SEP}</button>
+            <button type="button" class="button adding" data-count="1">{L_RECIPE_ADD_INGRED}</button>
+            <a class="dropdown button arrow-only" data-toggle="count-dropdown">
+                <span class="show-for-sr">Show menu</span>
+            </a>
+            <div class="dropdown-pane bottom float-left" id="count-dropdown" data-dropdown data-auto-focus="true">
+                <ul class="menu vertical">
+                    <li><button type="button" class="adding" data-count="5" data-toggle="count-dropdown">{L_RECIPE_ADD_INGRED5}</button></li>
+                    <li><button type="button" class="adding" data-count="10" data-toggle="count-dropdown">{L_RECIPE_ADD_INGRED10}</button></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="spacer">
+            <label>{L_RECIPE_METHOD}
+                <textarea id="method" name="method">
+%(method)s
+                </textarea>
+            </label>
+        </div>
+        <div class="spacer">
+            <label>{L_RECIPE_NOTES}
+                <textarea id="notes" name="notes">
+%(notes)s
+                </textarea>
+            </label>
+        </div>
+
+        <div class="clearfix">
+            <input type="submit" name="clonerecipe" class="button float-right" value="{L_CLONE_CLONE}" />
+        </div>
+    </form>
+</div>
+<ul class="hide" id="templates">
+    <li class="ingred">
+        <div class="grid-x">
+            <div class="small-1 cell">
+                <input class="quantity" type="text" placeholder="{L_RECIPE_ING_QUANT_PH}" value="%(quantity)s" />
+            </div>
+            <div class="small-2 cell">
+                <select class="units">
+%(units)s
+                </select>
+            </div>
+            <div class="small-2 cell">
+                <select class="preps">
+%(preps)s
+                </select>
+            </div>
+            <div class="small-3 cell">
+                <input type="text" class="ingredient" pattern="[-\w,.:()\x26;#*\\ ]+" title="{L_RECIPE_ING_FORMAT}" placeholder="{L_RECIPE_ING_ING_PH}" />
+            </div>
+            <div class="small-3 cell">
+                <input type="text" class="notes" placeholder="{L_RECIPE_ING_NOTE_PH}" />
+            </div>
+            <div class="small-1 cell">
+                <button class="button alert deletectrl" type="button" title="{L_RECIPE_ING_DELETE}"><i class="fa fa-trash" aria-hidden="true"></i></button>
+            </div>
+        </div>
+    </li>
+    <li class="separator">
+        <div class="grid-x">
+            <div class="small-11 cell">
+                <input type="text" class="separator" pattern="[-\w,.:()\x26;#*\\ ]+" title="{L_RECIPE_ING_FORMAT}" placeholder="Separator text">
+            </div>
+            <div class="small-1 cell">
+                <button class="button alert deletectrl" type="button" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+            </div>
+        </div>
+    </li>
+</ul>

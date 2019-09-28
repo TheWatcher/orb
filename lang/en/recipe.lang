@@ -6,6 +6,10 @@ EDIT_TITLE       = Edit Recipe
 EDIT_EDIT        = Edit Recipe
 EDIT_ERRORS      = Unable to edit recipe; the following errors have been encountered:
 
+CLONE_TITLE      = Clone Recipe
+CLONE_CLONE      = Clone Recipe
+CLONE_ERRORS     = Unable to clone recipe; the following errors have been encountered:
+
 RECIPE_NAME         = Name
 RECIPE_NAME_DOC     = The name of the recipe
 RECIPE_NAME_PH      = Recipe name
