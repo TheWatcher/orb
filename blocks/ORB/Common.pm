@@ -300,7 +300,7 @@ sub _validate_ingredient {
             $ingredient -> {"notes"} = $self -> {"template"} -> html_clean($ingdata -> {"notes"});
         } else {
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem",
-                                                              { "%(error)s" => "{L_ERR_BADNOTES}" });
+                                                              { "%(error)s" => "{L_ERR_BADNOTES}: '".$ingdata -> {"notes"}."'" });
         }
     }
 
