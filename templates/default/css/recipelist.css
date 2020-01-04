@@ -33,7 +33,7 @@ ul.meta li.type,
 ul.meta li.status,
 ul.meta li.time,
 ul.meta li.temp {
-    display: inline-block; color: #888; font-size: 0.7rem;
+    display: inline-block; color: #444; font-size: 0.7rem;
 }
 
 ul.recipes li .tags {
@@ -43,7 +43,7 @@ ul.recipes li .tags {
 }
 
 ul.recipes li .intro {
-    color: #888;
+    color: #444;
     padding-right: 0.2rem;
 }
 

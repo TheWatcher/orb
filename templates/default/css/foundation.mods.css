@@ -137,3 +137,7 @@ div.top-bar-right .menu>li {
 div.top-bar-right .dropdown.menu>li>.button{
     padding: 0.5rem 0.75rem;
 }
+
+.button.alert {
+    background-color: #9A3728;
+}
