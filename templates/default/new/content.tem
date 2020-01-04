@@ -113,7 +113,7 @@
     <li class="ingred">
         <div class="grid-x">
             <div class="small-1 cell">
-                <input class="quantity" type="text" placeholder="{L_RECIPE_ING_QUANT_PH}" value="%(quantity)s" />
+                <input class="quantity" type="text" placeholder="{L_RECIPE_ING_QUANT_PH}" value="" />
             </div>
             <div class="small-2 cell">
                 <select class="units">
