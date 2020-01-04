@@ -65,7 +65,7 @@ ERR_NAMEFORMAT   = Unsupported characters in the recipe name: only alphanumerics
 ERR_TAGFORMAT    = Unsupported characters in tag name: only alphanumerics, _, -, and space are supported.
 ERR_BADSEPNAME   = Unsupported characters in separator name: only alphanumerics, _, -, comma, space, and period are supported.
 ERR_BADQUANTITY  = No quantity specified for ingredient.
-ERR_BADNOTES     = Unsupported characters in notes: only alphanumerics, (, ), _, -, comma, space, and period are supported.
+ERR_BADNOTES     = Unsupported characters in ingredient notes: only alphanumerics, (, ), _, -, comma, space, and period are supported.
 ERR_JSONFORMAT   = Unknown or corrupt data in ingredient JSON
 
 EDIT_FAILED_BADID    = Unable to edit recipe: the specified recipe identifier is invalid.
