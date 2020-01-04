@@ -74,7 +74,7 @@ sub new {
 
     # Formats of accepted types
     $self -> {"formats"} = {
-        "recipename" => '^[-\w,. ]+$',
+        "recipename" => '^[-\w,.\' ]+$',
         "tags"       => '^[-\w ]+$',
         "quantity"   => '^[\d\w./]+$',
         "sepname"    => '^[-\w,.:()&;#*\ ]{1,255}$',
